@@ -1,7 +1,7 @@
-<div>
-  <img alt="Estação SMART 4.0" src="https://github.com/user-attachments/assets/3ccb5fcb-7fc2-41db-bab9-8bc63f92e2bc" width="25.4%" align="left" />
-  <img alt="SENAI" src="https://github.com/user-attachments/assets/3a062a0d-017b-4a22-a682-a9c4e34ba191" width="70%" align="right" />
-  <br clear="both" />
+<div align="center">
+  <img alt="Estação SMART 4.0" src="https://github.com/user-attachments/assets/3ccb5fcb-7fc2-41db-bab9-8bc63f92e2bc" width="25.4%"  />
+  <img width="3%"/>
+  <img alt="SENAI" src="https://github.com/user-attachments/assets/3a062a0d-017b-4a22-a682-a9c4e34ba191" width="70%"  />
 </div>
 <h1>
   Estação SMART 4.0 - Framework Front-End
