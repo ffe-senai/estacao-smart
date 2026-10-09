@@ -70,6 +70,44 @@ jobs:
     if: github.base_ref == 'dev'
     uses: ./.github/workflows/deploy.yaml
     secrets: inherit
+
+  # Every PR: one comment with the result of each check, updated on every push
+  report:
+    needs: [checks, from-dev, teste]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write    # lets deploy.yaml comment the preview link
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CHECKS: ${{ needs.checks.result }}
+      FROM_DEV: ${{ needs.from-dev.result }}
+      TESTE: ${{ needs.teste.result }}
+      URL: ${{ needs.teste.outputs.url }}
+      SHA: ${{ github.event.pull_request.head.sha }}
+      PR: ${{ github.event.pull_request.number }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Comment results on the PR
+        run: |
+          body=""
+          line() { body+="- $1"$'\n'; }
+
+          case "$CHECKS" in
+            success) line "✅ Lint, typecheck e build" ;;
+            failure) line "❌ **Checagem de compilação e sintaxe inválida** (lint, typecheck ou build)" ;;
+          esac
+
+          case "$FROM_DEV" in
+            success) line "✅ Origem \`dev\` com pré-release" ;;
+            failure) line "❌ PR para \`prod\` precisa vir da \`dev\` com pré-release" ;;
+          esac
+
+          case "$TESTE" in
+            success) line "🚀 Deploy no ambiente de **Teste** sucedido: $URL" ;;
+            failure) line "❌ **Erro ao implantar no ambiente de Teste**" ;;
+            skipped) if [ "$GITHUB_BASE_REF" = dev ]; then line "⏭️ Deploy no ambiente de **Teste** não executado: corrija a checagem"; fi ;;
+          esac
+
+          body+=$'\n'"Commit \`${SHA:0:7}\` · [Ver execução]($RUN_URL)"
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --edit-last --create-if-none --body "$body"
