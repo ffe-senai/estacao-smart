@@ -39,6 +39,9 @@ jobs:
     needs: resolve
     if: needs.resolve.outputs.target != ''
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write    # Teste: comment the preview link on the PR
     environment:
       name: ${{ needs.resolve.outputs.environment }}
       url: ${{ steps.preview.outputs.url || needs.resolve.outputs.url || steps.deploy.outputs.url }}
@@ -123,3 +126,15 @@ jobs:
             vercel alias rm "$alias" --yes --team="$VERCEL_ORG_ID"
           done
           echo "Removed: ${to_remove:-nothing} (keeping $KEEP)"
+
+      - name: Comment preview link on the PR
+        if: env.TARGET == 'teste'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          URL: ${{ steps.preview.outputs.url || steps.deploy.outputs.url }}
+        run: |
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --edit-last --create-if-none \
+            --body "🚀 Deploy no ambiente de **Teste** sucedido: $URL (commit ${SHA:0:7})"

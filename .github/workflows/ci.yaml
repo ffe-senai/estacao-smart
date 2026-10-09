@@ -70,3 +70,6 @@ jobs:
     if: github.base_ref == 'dev'
     uses: ./.github/workflows/deploy.yaml
     secrets: inherit
+    permissions:
+      contents: read
+      pull-requests: write    # lets deploy.yaml comment the preview link
