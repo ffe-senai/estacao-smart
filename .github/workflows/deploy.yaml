@@ -38,7 +38,6 @@ jobs:
       PROD_FLAG: ${{ ((github.event_name == 'release' && !github.event.release.prerelease) || (github.event_name == 'workflow_dispatch' && github.ref_name == 'prod')) && '--prod' || '' }}
       BRANCH_FLAG: ${{ ((github.event_name == 'release' && !github.event.release.prerelease) || (github.event_name == 'workflow_dispatch' && github.ref_name == 'prod')) && '' || '--git-branch=dev' }}
       RESERVED_SUBDOMAINS: "dev www prod"
-      VERCEL_SCOPE: ffe-senai-admin
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,22 +52,27 @@ jobs:
       - name: Install Vercel CLI
         run: npm i -g vercel@latest
 
+      - name: Verify Vercel auth
+        run: |
+          vercel whoami
+          vercel api "/v9/projects/$VERCEL_PROJECT_ID" --team=$VERCEL_ORG_ID --silent
+
       - name: Pull Vercel environment
-        run: vercel pull --yes --environment=$VERCEL_ENV $BRANCH_FLAG --token=$VERCEL_TOKEN
+        run: vercel pull --yes --environment=$VERCEL_ENV $BRANCH_FLAG
 
       - name: Build
-        run: vercel build $PROD_FLAG --token=$VERCEL_TOKEN
+        run: vercel build $PROD_FLAG
 
       - name: Deploy
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt $PROD_FLAG --token=$VERCEL_TOKEN)
+          url=$(vercel deploy --prebuilt $PROD_FLAG)
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Point deploy to dev.domain
         id: alias
         if: (github.event_name == 'workflow_dispatch' && github.ref_name == 'dev') || (github.event_name == 'release' && github.event.release.prerelease)
-        run: vercel alias set "${{ steps.deploy.outputs.url }}" "${{ vars.DOMAIN }}" --scope=$VERCEL_SCOPE --token=$VERCEL_TOKEN
+        run: vercel alias set "${{ steps.deploy.outputs.url }}" "${{ vars.DOMAIN }}" --team=$VERCEL_ORG_ID
 
       - name: Point merge deploy to preview domain
         id: preview
@@ -93,7 +97,7 @@ jobs:
           esac
 
           host="$name.$PREVIEW_DOMAIN"
-          vercel alias set "$DEPLOY_URL" "$host" --scope=$VERCEL_SCOPE --token=$VERCEL_TOKEN
+          vercel alias set "$DEPLOY_URL" "$host" --team=$VERCEL_ORG_ID
           echo "host=$host" >> "$GITHUB_OUTPUT"
 
       - name: Clean up previews
@@ -103,8 +107,7 @@ jobs:
           PREVIEW_DOMAIN: ${{ vars.PREVIEW_DOMAIN }}
           KEEP: ${{ github.event_name == 'release' && '0' || (vars.PREVIEW_LIMIT || '5') }}
         run: |
-          aliases=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v4/aliases?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID&limit=100")
+          aliases=$(vercel api "/v4/aliases?projectId=$VERCEL_PROJECT_ID&limit=100" --team=$VERCEL_ORG_ID --raw)
 
           to_remove=$(echo "$aliases" | jq -r \
             --arg suffix ".$PREVIEW_DOMAIN" \
@@ -123,7 +126,7 @@ jobs:
 
           for alias in $to_remove; do
             echo "Removing $alias"
-            vercel alias rm "$alias" --yes --scope=$VERCEL_SCOPE --token=$VERCEL_TOKEN
+            vercel alias rm "$alias" --yes --team=$VERCEL_ORG_ID
           done
 
       - name: Resolve environment URL
