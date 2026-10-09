@@ -9,9 +9,10 @@ permissions:
 
 concurrency:
   group: ci-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: true    # a new push cancels the previous run
 
 jobs:
+  # Every PR: lint, typecheck and build
   checks:
     runs-on: ubuntu-latest
     defaults:
@@ -34,6 +35,41 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
-        
+
       - name: Build
         run: npm run build
+
+  # PR into prod: must come from dev, and dev's commit must have a beta pre-release
+  from-dev:
+    if: github.base_ref == 'prod'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Only dev can merge into prod
+        if: github.head_ref != 'dev'
+        run: |
+          echo "PRs into prod must come from dev, not '$GITHUB_HEAD_REF'"
+          exit 1
+
+      - name: Head must have a beta pre-release
+        run: |
+          betas=$(gh api "repos/$GITHUB_REPOSITORY/tags" --paginate \
+            --jq '.[] | select(.commit.sha == env.HEAD_SHA) | .name | select(contains("-beta."))')
+
+          if [ -z "$betas" ]; then
+            echo "Publish a pre-release (x.y.z-beta.N) on dev's latest commit, then re-run this job"
+            exit 1
+          fi
+          echo "Pre-release found: $betas"
+
+  # PR into dev: deploy a Teste preview once checks pass
+  teste:
+    needs: checks
+    if: github.base_ref == 'dev'
+    uses: ./.github/workflows/deploy.yaml
+    secrets: inherit
+    permissions:
+      contents: read
+      pull-requests: write    # lets deploy.yaml comment the preview link
