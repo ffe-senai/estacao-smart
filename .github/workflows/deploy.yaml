@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: deploy-${{ ((github.event_name == 'release' && !github.event.release.prerelease) || (github.event_name == 'workflow_dispatch' && github.ref_name == 'prod')) && 'prod' || 'dev' }}
@@ -24,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ ((github.event_name == 'release' && !github.event.release.prerelease) || (github.event_name == 'workflow_dispatch' && github.ref_name == 'prod')) && 'Produção' || 'Desenvolvimento' }}
-      url: https://${{ vars.DOMAIN }}
+      url: ${{ steps.env-url.outputs.url }}
     defaults:
       run:
         working-directory: app-shell
@@ -35,6 +36,7 @@ jobs:
       VERCEL_ENV: ${{ ((github.event_name == 'release' && !github.event.release.prerelease) || (github.event_name == 'workflow_dispatch' && github.ref_name == 'prod')) && 'production' || 'preview' }}
       PROD_FLAG: ${{ ((github.event_name == 'release' && !github.event.release.prerelease) || (github.event_name == 'workflow_dispatch' && github.ref_name == 'prod')) && '--prod' || '' }}
       BRANCH_FLAG: ${{ ((github.event_name == 'release' && !github.event.release.prerelease) || (github.event_name == 'workflow_dispatch' && github.ref_name == 'prod')) && '' || '--git-branch=dev' }}
+      RESERVED_SUBDOMAINS: "dev www prod"
     steps:
       - uses: actions/checkout@v4
 
@@ -60,5 +62,83 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Point deploy to dev.domain
+        id: alias
         if: (github.event_name == 'workflow_dispatch' && github.ref_name == 'dev') || (github.event_name == 'release' && github.event.release.prerelease)
         run: vercel alias set "${{ steps.deploy.outputs.url }}" "${{ vars.DOMAIN }}" --token=$VERCEL_TOKEN
+
+      - name: Point merge deploy to preview domain
+        id: preview
+        if: github.event_name == 'push' && vars.PREVIEW_DOMAIN != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW_DOMAIN: ${{ vars.PREVIEW_DOMAIN }}
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          branch=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].head.ref // empty')
+          if [ -z "$branch" ]; then
+            echo "Push without a merged PR, no preview alias"
+            exit 0
+          fi
+          slug=$(echo "${branch##*/}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g' | cut -c1-50 | sed -E 's/-+$//')
+          if [ -z "$slug" ] || [[ " $RESERVED_SUBDOMAINS " == *" $slug "* ]]; then
+            echo "Branch '$branch' maps to a reserved or empty subdomain ('$slug'), no preview alias"
+            exit 0
+          fi
+          host="$slug.$PREVIEW_DOMAIN"
+          vercel alias set "$DEPLOY_URL" "$host" --token=$VERCEL_TOKEN
+          echo "host=$host" >> "$GITHUB_OUTPUT"
+
+      - name: Keep only the latest previews
+        if: steps.preview.outputs.host != ''
+        continue-on-error: true
+        env:
+          PREVIEW_DOMAIN: ${{ vars.PREVIEW_DOMAIN }}
+          PREVIEW_LIMIT: ${{ vars.PREVIEW_LIMIT || 5 }}
+        run: |
+          old=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v4/aliases?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID&limit=100" \
+            | jq -r --arg suffix ".$PREVIEW_DOMAIN" --arg reserved "$RESERVED_SUBDOMAINS" --argjson keep "$PREVIEW_LIMIT" \
+              '[.aliases[] | select(.alias | endswith($suffix)) | select((.alias | rtrimstr($suffix)) as $n | ($n | contains(".") | not) and (($reserved | split(" ")) | index($n) | not))] | sort_by(.updatedAt // .createdAt) | reverse | .[$keep:] | .[].alias')
+          if [ -z "$old" ]; then
+            echo "At most $PREVIEW_LIMIT previews, nothing to remove"
+            exit 0
+          fi
+          for alias in $old; do
+            echo "Removing old preview $alias"
+            vercel alias rm "$alias" --yes --token=$VERCEL_TOKEN
+          done
+
+      - name: Remove preview aliases
+        if: github.event_name == 'release' && github.event.release.prerelease && vars.PREVIEW_DOMAIN != ''
+        continue-on-error: true
+        env:
+          PREVIEW_DOMAIN: ${{ vars.PREVIEW_DOMAIN }}
+        run: |
+          aliases=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v4/aliases?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID&limit=100" \
+            | jq -r --arg suffix ".$PREVIEW_DOMAIN" --arg reserved "$RESERVED_SUBDOMAINS" '.aliases[] | select(.alias | endswith($suffix)) | select((.alias | rtrimstr($suffix)) as $n | ($n | contains(".") | not) and (($reserved | split(" ")) | index($n) | not)) | .alias')
+          if [ -z "$aliases" ]; then
+            echo "No preview aliases to remove"
+            exit 0
+          fi
+          for alias in $aliases; do
+            echo "Removing $alias"
+            vercel alias rm "$alias" --yes --token=$VERCEL_TOKEN
+          done
+
+      - name: Resolve environment URL
+        id: env-url
+        if: always() && steps.deploy.outcome == 'success'
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+          ON_DOMAIN: ${{ env.PROD_FLAG == '--prod' || steps.alias.outcome == 'success' }}
+          DOMAIN: ${{ vars.DOMAIN }}
+          PREVIEW_HOST: ${{ steps.preview.outputs.host }}
+        run: |
+          if [ "$ON_DOMAIN" = "true" ] && [ -n "$DOMAIN" ]; then
+            echo "url=https://$DOMAIN" >> "$GITHUB_OUTPUT"
+          elif [ -n "$PREVIEW_HOST" ]; then
+            echo "url=https://$PREVIEW_HOST" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+          fi
