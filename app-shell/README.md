@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<h1>
+  app-shell
+  <br>
+<sup>
+  Aplicação Next.js da Estação SMART 4.0 - Framework Front-End
+</sup>
+</h1>
 
-## Getting Started
+## Primeiros Passos
 
-First, run the development server:
+<p>
+  Requisitos:<br>
+  • <a href="https://git-scm.com/downloads">Git</a><br>
+  • <a href="https://nodejs.org/en/download">Node.js</a>
+</p>
 
 ```bash
+# Instale as dependências do projeto definidas no package-lock.json
+npm ci
+
+# Inicie o projeto no localhost:3000
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+  Teste em:<br>
+  http://localhost:3000
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Validando seu código
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Rode antes de enviar. São as mesmas verificações que o GitHub faz no PR:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | Uso |
+|---|---|
+| `npm run lint` | ESLint |
+| `npm run typecheck` | Tipagem TypeScript (`next typegen` + `tsc`) |
+| `npm run build` | Build de produção |
 
-## Learn More
+## Especificações:
+- Infraestrutura em Nuvem: [Vercel](#vercel)
+- Framework Front-End: [Next.js](#nextjs)
+- Estilização: [Tailwind CSS](#tailwind-css)
+- Componentes de Interface: [shadcn/ui](#shadcn-ui)
+- Gráficos: [Recharts](#recharts)
+- Ícones: [Lucide](#lucide)
+- Tipografia: [Geist](#geist) e [Geist Mono](#geist-mono)
+- Base de Componentes (shadcn/ui): [Base UI](#base-ui)
 
-To learn more about Next.js, take a look at the following resources:
+## Contribuindo
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Para criar sua branch, enviar seu código e abrir o Pull Request, siga o [Fluxo de Trabalho](../README.md#fluxo-de-trabalho) na raiz do repositório.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Referências:
+#### <a id="vercel" href="https://vercel.com/">Vercel: Agentic Infrastructure</a>
 
-## Deploy on Vercel
+#### <a id="nextjs" href="https://nextjs.org/">Next.js by Vercel - The React Framework</a>
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### <a id="tailwind-css" href="https://tailwindcss.com/">Tailwind CSS - Rapidly build modern websites without ever leaving your HTML</a>
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+#### <a id="shadcn-ui" href="https://ui.shadcn.com/">shadcn/ui - The Foundation for your Design System</a>
+
+#### <a id="recharts" href="https://recharts.github.io/">Recharts - Re-designed charting library built with React and D3.</a>
+
+#### <a id="lucide" href="https://lucide.dev/">Lucide</a>
+
+#### <a id="geist" href="https://fonts.google.com/specimen/Geist">Geist - Google Fonts</a>
+
+#### <a id="geist-mono" href="https://fonts.google.com/specimen/Geist+Mono">Geist Mono - Google Fonts</a>
+
+#### <a id="base-ui" href="https://base-ui.com/">Unstyled UI components for accessible design systems · Base UI</a>
