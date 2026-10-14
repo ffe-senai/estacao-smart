@@ -38,6 +38,7 @@ Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `.next
 git clone --recurse-submodules https://github.com/ffe-senai/estacao-smart.git
 
 ```
+Para instalar o app-shel e rodar a aplicação, siga o [README do app-shell](app-shell/README.md).
 
 > ⚠️ **Atenção!**<br>
 > **Nunca** trabalhe direto na **`dev`**. Crie uma branch para cada tarefa:
@@ -54,9 +55,7 @@ git clone --recurse-submodules https://github.com/ffe-senai/estacao-smart.git
 | `teste/*` | Adicionar ou ajustar testes |
 | `build/*` | Alterações no processo de compilação |
 | `ci/*` | Configuração da integração contínua |
-| `revert` | Desfazer alterações anteriores |
-
-Para instalar e rodar a aplicação, siga o [README do app-shell](app-shell/README.md).
+| `revert/*` | Desfazer alterações anteriores |
 
 ## Fluxo de Trabalho
 
@@ -107,7 +106,7 @@ O nome segue o padrão comumente adotado pelo mercado, `tipo/descricao`, em min�
 | `teste/*` | Adicionar ou ajustar testes |
 | `build/*` | Alterações no processo de compilação |
 | `ci/*` | Configuração da integração contínua |
-| `revert` | Desfazer alterações anteriores |
+| `revert/*` | Desfazer alterações anteriores |
 
 </details>
 
