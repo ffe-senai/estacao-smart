@@ -5,9 +5,9 @@ import ReadmeBanner from "./readme-banner";
 
 export default function GithubDialog() {
 
-    function abrirRepositorio() {
-        window.open(REPO_URL, "_blank", "noopener,noreferrer");
-    }
+    // function abrirRepositorio() {
+    //     window.open(REPO_URL, "_blank", "noopener,noreferrer");
+    // }
 
     return (
         <Dialog>

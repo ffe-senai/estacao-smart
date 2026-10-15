@@ -52,7 +52,7 @@ Para instalar o app-shel e rodar a aplicação, siga o [README do app-shell](app
 | `refactor/*` | Reorganizar código sem mudar o resultado |
 | `chore/*` | Configuração e dependências |
 | `perf/*` | Melhorar o desempenho |
-| `teste/*` | Adicionar ou ajustar testes |
+| `test/*` | Adicionar ou ajustar testes |
 | `build/*` | Alterações no processo de compilação |
 | `ci/*` | Configuração da integração contínua |
 | `revert/*` | Desfazer alterações anteriores |
@@ -103,7 +103,7 @@ O nome segue o padrão comumente adotado pelo mercado, `tipo/descricao`, em min�
 | `refactor/*` | Reorganizar código sem mudar o resultado |
 | `chore/*` | Configuração e dependências |
 | `perf/*` | Melhorar o desempenho |
-| `teste/*` | Adicionar ou ajustar testes |
+| `test/*` | Adicionar ou ajustar testes |
 | `build/*` | Alterações no processo de compilação |
 | `ci/*` | Configuração da integração contínua |
 | `revert/*` | Desfazer alterações anteriores |
