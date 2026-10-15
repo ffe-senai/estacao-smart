@@ -1,7 +1,5 @@
 import GithubDialog from "@/components/github/github-dialog";
 import ReadmeBanner from "@/components/github/readme-banner";
-import Image from "next/image";
-import RastreabilidadeQrCode from "@/modules/module-federation";
 import Rastreabilidade from "@/modules/rastreabilidade";
 import Expedicao from "@/modules/expedicao";
 
