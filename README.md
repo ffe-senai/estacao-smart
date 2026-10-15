@@ -20,7 +20,6 @@
 |---|---|---|
 | `app-shell/` | A aplicação (Next.js). Todo o código fica aqui | Todos |
 | `.github/` | Workflows de CI/CD e regras do repositório | Time DevOps |
-| `vercel.json` | Configuração da Vercel | Time DevOps |
 
 Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `.next/` e `.env*` já são ignorados pelo `.gitignore` e **nunca** devem ser enviados.
 
