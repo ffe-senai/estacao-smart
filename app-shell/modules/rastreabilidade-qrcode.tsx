@@ -7,8 +7,9 @@ const RastreabilidadeQrCode = dynamic(
       console.log("Remote Module Exports:", module);
 
       return module!.default;
-  }).catch((error: any) => {
+  }).catch((error: Error) => {
         console.error("Error loading remote module:", error);
+        // eslint-disable-next-line react/display-name
         return () => <div>Error loading remote module</div>;
   }),
   {

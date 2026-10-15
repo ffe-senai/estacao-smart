@@ -1,6 +1,5 @@
 import GithubDialog from "@/components/github/github-dialog";
 import ReadmeBanner from "@/components/github/readme-banner";
-import Image from "next/image";
 import RastreabilidadeQrCode from "@/modules/rastreabilidade-qrcode";
 
 export default function Home() {
