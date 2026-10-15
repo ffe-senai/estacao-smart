@@ -4,11 +4,6 @@ import GithubButton from "./github-button";
 import ReadmeBanner from "./readme-banner";
 
 export default function GithubDialog() {
-
-    function abrirRepositorio() {
-        window.open(REPO_URL, "_blank", "noopener,noreferrer");
-    }
-
     return (
         <Dialog>
             <DialogTrigger
