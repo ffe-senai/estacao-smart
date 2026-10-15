@@ -14,7 +14,7 @@ permissions:
 
 env:
   DOMAIN: ffe-senai.com.br
-  RESERVED_SUBDOMAINS: dev www prod
+  RESERVED_SUBDOMAINS: dev www prod g2 g3 g4 g5
 
 jobs:
   resolve:
@@ -77,7 +77,16 @@ jobs:
         run: vercel pull --yes --environment="$VERCEL_ENV"
 
       - name: Build
-        run: vercel build --target="$VERCEL_ENV"
+        env:
+          G2_ENTRY: ${{ vars.G2_ENTRY }}
+          G3_ENTRY: ${{ vars.G3_ENTRY }}
+          G4_ENTRY: ${{ vars.G4_ENTRY }}
+          G5_ENTRY: ${{ vars.G5_ENTRY }}
+        run: |
+          if [ "$TARGET" = prod ]; then   # production always loads the groups from their fixed subdomains
+            export G2_ENTRY="https://g2.$DOMAIN" G3_ENTRY="https://g3.$DOMAIN" G4_ENTRY="https://g4.$DOMAIN" G5_ENTRY="https://g5.$DOMAIN"
+          fi
+          vercel build --target="$VERCEL_ENV"
 
       - name: Deploy
         id: deploy
@@ -128,3 +137,12 @@ jobs:
             vercel alias rm "$alias" --yes --team="$VERCEL_ORG_ID"
           done
           echo "Removed: ${to_remove:-nothing} (keeping $KEEP)"
+
+  # Production only: check and deploy every group's remote (submodules at the repo root)
+  remotes:
+    needs: [resolve, deploy]
+    if: needs.resolve.outputs.target == 'prod'
+    uses: ./.github/workflows/gm_ci.yaml
+    with:
+      deploy: true
+    secrets: inherit
