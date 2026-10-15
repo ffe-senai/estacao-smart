@@ -32,39 +32,29 @@ Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `.next
 </p>
 
 ```bash
-# Clone o repositório
-git clone https://github.com/ffe-senai/estacao-smart.git
+
+# Clone o repositório junto com os submódulos
+git clone --recurse-submodules https://github.com/ffe-senai/estacao-smart.git
 
 ```
+Para instalar o app-shel e rodar a aplicação, siga o [README do app-shell](app-shell/README.md).
 
 > ⚠️ **Atenção!**<br>
 > **Nunca** trabalhe direto na **`dev`**. Crie uma branch para cada tarefa:
 
-
-```bash
-# Vá para a branch dev
-git checkout dev
-
-# Baixe as últimas alterações
-git pull
-
-# Crie sua própria branch
-git checkout -b feat/grafico-velocidade
-```
-
-O nome segue o padrão comumente adotado pelo mercado, `tipo/descricao`, em minúsculas e com hífens. Nomes fora desse formato são bloqueados.
-
 | Tipo | Quando usar |
 |---|---|
-| `feat` | Algo novo |
-| `fix` | Correção de erro |
-| `docs` | Documentação |
-| `style` | Visual ou formatação |
-| `refactor` | Reorganizar código sem mudar o resultado |
-| `chore` | Configuração e dependências |
-
-
-Para instalar e rodar a aplicação, siga o [README do app-shell](app-shell/README.md).
+| `feat/*` | Algo novo |
+| `fix/*` | Correção de erro |
+| `docs/*` | Documentação |
+| `style/*` | Visual ou formatação |
+| `refactor/*` | Reorganizar código sem mudar o resultado |
+| `chore/*` | Configuração e dependências |
+| `perf/*` | Melhorar o desempenho |
+| `test/*` | Adicionar ou ajustar testes |
+| `build/*` | Alterações no processo de compilação |
+| `ci/*` | Configuração da integração contínua |
+| `revert/*` | Desfazer alterações anteriores |
 
 ## Fluxo de Trabalho
 
@@ -105,12 +95,17 @@ O nome segue o padrão comumente adotado pelo mercado, `tipo/descricao`, em min�
 
 | Tipo | Quando usar |
 |---|---|
-| `feat` | Algo novo |
-| `fix` | Correção de erro |
-| `docs` | Documentação |
-| `style` | Visual ou formatação |
-| `refactor` | Reorganizar código sem mudar o resultado |
-| `chore` | Configuração e dependências |
+| `feat/*` | Algo novo |
+| `fix/*` | Correção de erro |
+| `docs/*` | Documentação |
+| `style/*` | Visual ou formatação |
+| `refactor/*` | Reorganizar código sem mudar o resultado |
+| `chore/*` | Configuração e dependências |
+| `perf/*` | Melhorar o desempenho |
+| `test/*` | Adicionar ou ajustar testes |
+| `build/*` | Alterações no processo de compilação |
+| `ci/*` | Configuração da integração contínua |
+| `revert/*` | Desfazer alterações anteriores |
 
 </details>
 
@@ -152,7 +147,40 @@ git push
 </details>
 
 <details>
-<summary><b>5. Abra o Pull Request</b></summary>
+<summary><b>5. Gerenciando submódulos</b></summary>
+
+**Adicionando um submódulo:**
+
+```bash
+git submodule add <repo-url> <path>
+git add .gitmodules <path>
+git commit -m "chore: adiciona submódulo"
+git push
+```
+
+**Atualizando os submódulos existentes:**
+
+```bash
+git submodule update --init --recursive
+```
+
+**Enviando alterações feitas dentro de um submódulo:**
+
+```bash
+cd <path>
+git add .
+git commit -m "feat: atualiza submódulo"
+git push
+cd ..
+git add <path>
+git commit -m "chore: atualiza referência do submódulo"
+git push
+```
+
+</details>
+
+<details>
+<summary><b>6. Abra o Pull Request</b></summary>
 
 1. No [repositório](https://github.com/ffe-senai/estacao-smart), clique em **Compare & pull request**.
 2. Confira: **base:** `dev` ← **compare:** `feat/sua-branch`.
@@ -162,7 +190,7 @@ git push
 </details>
 
 <details>
-<summary><b>6. Acompanhe as verificações e o preview</b></summary>
+<summary><b>7. Acompanhe as verificações e o preview</b></summary>
 
 Em alguns minutos aparece um comentário no PR:
 
@@ -174,7 +202,7 @@ Para corrigir, altere o código na sua branch, faça um novo commit e `git push`
 </details>
 
 <details>
-<summary><b>7. Faça o merge</b></summary>
+<summary><b>8. Faça o merge</b></summary>
 
 Com tudo verde e o PR aprovado:
 
@@ -190,7 +218,7 @@ git pull
 </details>
 
 <details>
-<summary><b>8. Subindo para ambientes de Desenvolvimento e Produção</b></summary>
+<summary><b>9. Subindo para ambientes de Desenvolvimento e Produção</b></summary>
 
 ### Desenvolvimento:
 
