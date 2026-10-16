@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 /* Em @layer components: as utilities do Tailwind (tamanhos, variantes, className) podem sobrescrever */
 @import "./theme.css" layer(components);
+@import "dockview-react/dist/styles/dockview.css" layer(components);
+@import "../components/workspace/workspace.css" layer(components);
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
