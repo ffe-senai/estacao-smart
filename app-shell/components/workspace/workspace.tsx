@@ -48,9 +48,9 @@ export function Workspace({ brand, actions }: { brand?: ReactNode; actions?: Rea
 
     const onReady = useCallback(({ api }: DockviewReadyEvent) => {
         const saved = loadSavedLayout();
-        if (!saved || !restoreLayout(api, saved)) {
-            if (saved) toast.warning("O layout salvo não pôde ser restaurado. Aplicamos o layout padrão.");
-            applyLayoutPreset(api, defaultPreset(window.innerWidth));
+        // Sem layout salvo, começa sem janelas abertas.
+        if (saved && !restoreLayout(api, saved)) {
+            toast.warning("O layout salvo não pôde ser restaurado.");
         }
         setApi(api);
     }, []);

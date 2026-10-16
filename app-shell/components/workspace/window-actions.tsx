@@ -44,6 +44,18 @@ export function WindowActions({ api, containerApi, group }: IDockviewHeaderActio
                     {maximized ? <Minimize2 /> : <Maximize2 />}
                 </ActionButton>
             )}
+            {location === "floating" && (
+                <ActionButton
+                    label="Expandir"
+                    onClick={() => {
+                        const panel = group.activePanel;
+                        group.api.moveTo({ position: "right" });
+                        panel?.api.maximize();
+                    }}
+                >
+                    <Maximize2 />
+                </ActionButton>
+            )}
             {!locked && location === "grid" && !maximized && (
                 <ActionButton
                     label="Destacar janela"
@@ -81,15 +93,10 @@ function ActionButton({ label, onClick, children }: { label: string; onClick: ()
     );
 }
 
-/** Tamanho inicial da janela destacada: centralizada, em cascata com as outras. */
+/** Tamanho inicial da janela destacada. */
 function floatingBox(api: DockviewApi) {
-    const width = Math.round(Math.min(720, api.width * 0.6));
-    const height = Math.round(Math.min(480, api.height * 0.6));
-    const cascade = 24 * api.groups.filter((group) => group.api.location.type === "floating").length;
-    return {
-        width,
-        height,
-        x: Math.round((api.width - width) / 2) + cascade,
-        y: Math.round((api.height - height) / 2) + cascade,
-    };
+    // ~1/4 da tela (metade da largura x metade da altura), centralizada.
+    const width = Math.round(api.width / 2);
+    const height = Math.round(api.height / 2);
+    return { width, height, x: Math.round((api.width - width) / 2), y: Math.round((api.height - height) / 2) };
 }
