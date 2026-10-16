@@ -16,7 +16,7 @@ export function WindowWatermark() {
             <Image src="/logos/smart_cube.png" alt="" width={72} height={72} className="opacity-30 grayscale" />
             <div className="space-y-1">
                 <p className="text-sm font-semibold tracking-[0.05em] uppercase">Nenhuma janela aberta</p>
-                <p className="text-sm text-smart-text-secondary">Abra um módulo ou restaure o layout padrão.</p>
+                <p className="text-sm text-smart-text-secondary">Abra um módulo.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
                 {SMART_MODULES.map((module) => {
@@ -37,7 +37,7 @@ export function WindowWatermark() {
             </div>
             <Button onClick={resetLayout}>
                 <RotateCcw />
-                Restaurar layout padrão
+                Abrir todos
             </Button>
         </div>
     );
