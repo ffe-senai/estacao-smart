@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 import Image from "next/image";
-import { RotateCcw } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SMART_MODULES } from "@/modules/registry";
 import { useWorkspace } from "./workspace-context";
@@ -36,7 +36,7 @@ export function WindowWatermark() {
                 })}
             </div>
             <Button onClick={resetLayout}>
-                <RotateCcw />
+                <LayoutDashboard />
                 Abrir todos
             </Button>
         </div>
