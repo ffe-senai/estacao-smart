@@ -3,10 +3,10 @@ import dynamic from 'next/dynamic';
 import { expedicao } from "@/lib/smart-modules";
 
 const Expedicao = dynamic(
-  () => expedicao.loadRemote<{ default: React.ComponentType }>('smart40_g5/Expedicao').then((module) => {
+  () => expedicao.loadRemote<{ App: React.ComponentType }>('smart40_g5/Expedicao').then((module) => {
     console.log("Remote Module Exports:", module);
 
-    return module!.default;
+    return module!.App;
   }).catch((error: Error) => {
     console.error("Error loading remote module:", error);
     // eslint-disable-next-line react/display-name
