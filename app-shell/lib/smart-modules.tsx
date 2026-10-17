@@ -9,7 +9,7 @@ import * as JSXRuntime from 'react/jsx-runtime';
 const v = React.version;
 const cfg = { singleton: true, requiredVersion: false as const };
 
-const mf = createInstance({
+export const rastreabilidade = createInstance({
     name: "smart-modules",
     remotes: [
         {
@@ -27,4 +27,21 @@ const mf = createInstance({
     },
 });
 
-export default mf;
+
+export const expedicao = createInstance({
+    name: "smart-modules",
+    remotes: [
+        {
+            type: 'module',
+            name: 'smart40_g5',
+            alias: "rastreabilidade-qrcode",
+            entry: 'https://expedicao-nu.vercel.app/remoteEntry.js',
+        }
+    ],
+    shared: {
+        react: { version: v, lib: () => React, shareConfig: cfg },
+        'react-dom': { version: v, lib: () => ReactDOM, shareConfig: cfg },
+        'react-dom/client': { version: v, lib: () => ReactDOMClient, shareConfig: cfg },
+        'react/jsx-runtime': { version: v, lib: () => JSXRuntime, shareConfig: cfg },
+    },
+});
