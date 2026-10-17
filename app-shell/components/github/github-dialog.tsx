@@ -4,11 +4,6 @@ import GithubButton from "./github-button";
 import ReadmeBanner from "./readme-banner";
 
 export default function GithubDialog() {
-
-    // function abrirRepositorio() {
-    //     window.open(REPO_URL, "_blank", "noopener,noreferrer");
-    // }
-
     return (
         <Dialog>
             <DialogTrigger
@@ -52,6 +47,7 @@ const ESPECIFICACOES = [
     { area: "Framework Front-End", itens: [{ nome: "Next.js", url: "https://nextjs.org/" }] },
     { area: "Estilização", itens: [{ nome: "Tailwind CSS", url: "https://tailwindcss.com/" }] },
     { area: "Componentes de Interface", itens: [{ nome: "shadcn/ui", url: "https://ui.shadcn.com/" }] },
+    { area: "Janelas e Layout", itens: [{ nome: "dockview", url: "https://dockview.dev/" }] },
     { area: "Gráficos", itens: [{ nome: "Recharts", url: "https://recharts.github.io/" }] },
     { area: "Ícones", itens: [{ nome: "Lucide", url: "https://lucide.dev/" }] },
     {
