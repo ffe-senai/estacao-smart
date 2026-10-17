@@ -2,7 +2,7 @@
 import dynamic from 'next/dynamic';
 import { expedicao } from "@/lib/smart-modules";
 
-const RastreabilidadeQrCode = dynamic(
+const Expedicao = dynamic(
   () => expedicao.loadRemote<{ default: React.ComponentType }>('smart40_g5/Expedicao').then((module) => {
     console.log("Remote Module Exports:", module);
 
@@ -18,4 +18,4 @@ const RastreabilidadeQrCode = dynamic(
   }
 );
 
-export default RastreabilidadeQrCode;
+export default Expedicao;
