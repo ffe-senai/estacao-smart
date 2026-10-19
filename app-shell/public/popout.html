@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- Página vazia usada pelo dockview para abrir uma janela em outra janela do navegador. -->
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Estação SMART 4.0</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #0f172a;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Mesmas classes do <html> da janela principal: fontes do next/font e tema escuro.
+      if (window.opener) document.documentElement.className = window.opener.document.documentElement.className;
+    </script>
+  </body>
+</html>

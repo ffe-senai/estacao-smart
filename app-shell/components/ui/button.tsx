@@ -3,33 +3,43 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 const buttonVariants = cva(
-  "enabled:cursor-pointer group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "smart-btn enabled:cursor-pointer group/button inline-flex shrink-0 items-center justify-center rounded-[var(--smart-radius-sm,4px)] border border-transparent bg-clip-padding text-sm font-semibold tracking-[0.05em] uppercase font-[family-name:var(--smart-font-family,inherit)] whitespace-nowrap transition-all duration-[var(--smart-transition-fast,0.15s)] outline-none select-none focus-visible:border-[var(--smart-border-focus)] focus-visible:ring-3 focus-visible:ring-[var(--smart-border-focus)]/40 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-[var(--smart-status-danger)] aria-invalid:ring-3 aria-invalid:ring-[var(--smart-status-danger)]/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        default:
+          "smart-btn--primary bg-[var(--smart-accent-primary)] text-white hover:bg-[var(--smart-accent-primary-hover)]",
+        primary:
+          "smart-btn--primary bg-[var(--smart-accent-primary)] text-white hover:bg-[var(--smart-accent-primary-hover)]",
+        emergency:
+          "smart-btn--emergency bg-gradient-to-br from-[#dc2626] to-[#991b1b] text-white border-2 border-[#fca5a5] shadow-[0_0_12px_rgba(239,68,68,0.5)] font-extrabold hover:from-[#ef4444] hover:to-[#b91c1c] hover:shadow-[0_0_20px_rgba(239,68,68,0.8)]",
+        cobot:
+          "bg-[var(--smart-accent-cobot)] text-white hover:brightness-110 shadow-xs",
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-[var(--smart-border-color)] bg-[var(--smart-bg-surface)] text-[var(--smart-text-primary)] hover:bg-[var(--smart-bg-surface-hover)] hover:text-white hover:border-[var(--smart-border-focus)]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-[var(--smart-bg-surface-hover)] text-[var(--smart-text-primary)] hover:bg-[var(--smart-border-color)] border border-[var(--smart-border-color)]",
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "text-[var(--smart-text-secondary)] hover:bg-[var(--smart-bg-surface-hover)] hover:text-[var(--smart-text-primary)]",
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-[rgba(239,68,68,0.15)] text-[var(--smart-status-danger)] border border-[var(--smart-status-danger)] hover:bg-[rgba(239,68,68,0.25)] shadow-[var(--smart-shadow-glow-red)]",
+        link:
+          "text-[var(--smart-accent-primary)] underline-offset-4 hover:underline normal-case tracking-normal font-medium",
       },
       size: {
         default:
-          "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        icon: "size-8",
+          "h-9 gap-2 px-4.5 py-2.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        emergency:
+          "h-12 gap-2.5 px-6 py-3.5 text-base font-extrabold",
+        xs: "h-6 gap-1 rounded-[var(--smart-radius-sm,4px)] px-2 text-xs in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7 gap-1 rounded-[var(--smart-radius-sm,4px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: "h-10 gap-2 px-5 text-base has-data-[icon=inline-end]:pr-3.5 has-data-[icon=inline-start]:pl-3.5",
+        icon: "size-8 p-0",
         "icon-xs":
-          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+          "size-6 p-0 rounded-[var(--smart-radius-sm,4px)] in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3",
         "icon-sm":
-          "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
-        "icon-lg": "size-9",
+          "size-7 p-0 rounded-[var(--smart-radius-sm,4px)] in-data-[slot=button-group]:rounded-md",
+        "icon-lg": "size-9 p-0",
       },
     },
     defaultVariants: {

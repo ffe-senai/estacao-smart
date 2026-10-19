@@ -1,0 +1,176 @@
+/* ==========================================================================
+   SMART 4.0 — TEMA DAS JANELAS (dockview)
+   Liga as variáveis do dockview (--dv-*) aos tokens do tema (--smart-*).
+   Uma classe só: o dockview a copia para as janelas abertas em outro monitor.
+   ========================================================================== */
+
+:root {
+  /* Destaque do módulo de Expedição (G5): fora das cores de status */
+  --smart-accent-expedicao: #a78bfa;
+}
+
+.dockview-theme-smart {
+  color-scheme: dark;
+
+  /* Estrutura */
+  --dv-spacing-padding: var(--smart-space-sm, 8px);
+  --dv-border-radius: var(--smart-radius-md, 8px);
+  --dv-tab-border-radius: var(--smart-radius-sm, 4px);
+  --dv-sash-border-radius: var(--smart-radius-full, 9999px);
+  --dv-dropdown-border-radius: var(--smart-radius-md, 8px);
+  --dv-tabs-and-actions-container-height: 40px;
+  --dv-tabs-and-actions-container-font-size: 12px;
+  --dv-tab-font-size: 12px;
+  --dv-tab-margin-block: 5px;
+  --dv-tab-margin-inline: 2px;
+  --dv-tab-margin: var(--dv-tab-margin-block) var(--dv-tab-margin-inline);
+  --dv-tab-close-icon-size: 12px;
+  --dv-overlay-z-index: 999;
+
+  /* Cores: fundo do app entre as janelas, barra escura e corpo em superfície */
+  --dv-group-view-background-color: var(--smart-bg-app);
+  --dv-tabs-and-actions-container-background-color: var(--smart-bg-input);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--smart-bg-surface);
+  --dv-activegroup-hiddenpanel-tab-background-color: transparent;
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--smart-bg-surface);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: transparent;
+  --dv-activegroup-visiblepanel-tab-color: var(--smart-text-primary);
+  --dv-activegroup-hiddenpanel-tab-color: var(--smart-text-secondary);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--smart-text-secondary);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--smart-text-muted);
+  --dv-tab-divider-color: transparent;
+  --dv-separator-border: transparent;
+  --dv-paneview-header-border-color: var(--smart-border-color);
+  --dv-paneview-active-outline-color: var(--smart-border-focus);
+  --dv-icon-hover-background-color: var(--smart-bg-surface-hover);
+  --dv-tabs-container-scrollbar-color: var(--smart-border-color);
+  --dv-scrollbar-background-color: var(--smart-border-color);
+  --dv-context-menu-background-color: var(--smart-bg-surface);
+  --dv-context-menu-color: var(--smart-text-primary);
+
+  /* Divisórias de redimensionar */
+  --dv-sash-color: transparent;
+  --dv-active-sash-color: var(--smart-border-focus);
+  --dv-active-sash-transition-duration: 0.1s;
+  --dv-active-sash-transition-delay: 0.1s;
+
+  /* Arrastar e soltar */
+  --dv-drag-over-background-color: color-mix(in srgb, var(--smart-accent-primary) 22%, transparent);
+  --dv-drag-over-border-color: var(--smart-border-focus);
+  --dv-edge-dock-indicator-color: var(--smart-border-focus);
+
+  /* Janelas destacadas (flutuantes) */
+  --dv-floating-box-shadow: 0 16px 40px rgb(2 6 23 / 0.65), 0 2px 8px rgb(2 6 23 / 0.45);
+  --dv-floating-border: 1px solid var(--smart-border-color);
+  --dv-floating-group-border: 1px solid var(--smart-border-color);
+  --dv-floating-group-dragging-opacity: 0.85;
+  --dv-floating-titlebar-height: 14px;
+  --dv-floating-titlebar-background-color: var(--smart-bg-input);
+  --dv-floating-titlebar-border-bottom: 1px solid var(--smart-border-color);
+
+  box-sizing: border-box;
+  padding: var(--dv-spacing-padding);
+  background-color: var(--dv-group-view-background-color);
+}
+
+.dockview-theme-smart .dv-dockview {
+  padding: 0;
+}
+
+/* Janela: borda, cantos e sombra de card */
+.dockview-theme-smart .dv-groupview {
+  border: 1px solid var(--smart-border-color);
+  border-radius: var(--dv-border-radius);
+  box-shadow: var(--smart-shadow-card);
+}
+
+.dockview-theme-smart .dv-groupview.dv-active-group {
+  border-color: color-mix(in srgb, var(--smart-border-focus) 45%, var(--smart-border-color));
+}
+
+.dockview-theme-smart .dv-groupview .dv-tabs-and-actions-container {
+  padding: 0 calc(var(--dv-border-radius) / 2);
+  border-bottom: 1px solid var(--smart-border-color);
+  border-top-left-radius: var(--dv-border-radius);
+  border-top-right-radius: var(--dv-border-radius);
+}
+
+.dockview-theme-smart .dv-groupview .dv-content-container {
+  background-color: var(--smart-bg-surface);
+  border-bottom-left-radius: var(--dv-border-radius);
+  border-bottom-right-radius: var(--dv-border-radius);
+}
+
+.dockview-theme-smart .dv-render-overlay {
+  border-bottom-left-radius: var(--dv-border-radius);
+  border-bottom-right-radius: var(--dv-border-radius);
+}
+
+/* Abas */
+.dockview-theme-smart .dv-tab {
+  padding: 0;
+  border-radius: var(--dv-tab-border-radius);
+}
+
+.dockview-theme-smart .dv-tab.dv-inactive-tab:hover {
+  background-color: var(--smart-bg-surface-hover);
+}
+
+/* Aba ativa: sublinhado na cor do módulo */
+.dockview-theme-smart .dv-tab.dv-active-tab .smart-window-tab {
+  box-shadow: inset 0 -2px 0 var(--module-accent);
+}
+
+.dockview-theme-smart .dv-tabs-overflow-container,
+.dockview-theme-smart .dv-tabs-overflow-dropdown-default {
+  border-radius: var(--dv-dropdown-border-radius);
+  height: unset !important;
+}
+
+/* Divisórias e alvos de soltar */
+.dockview-theme-smart .dv-sash {
+  border-radius: var(--dv-sash-border-radius);
+}
+
+.dockview-theme-smart .dv-drop-target-anchor {
+  border-radius: calc(var(--dv-border-radius) / 4);
+}
+
+.dockview-theme-smart .dv-drop-target-anchor.dv-drop-target-content {
+  border-radius: var(--dv-border-radius);
+}
+
+/* Janelas destacadas */
+.dockview-theme-smart .dv-resize-container {
+  border: none;
+  border-radius: var(--dv-border-radius) !important;
+}
+
+.dockview-theme-smart .dv-resize-container .dv-groupview {
+  border: var(--dv-floating-group-border);
+  box-shadow: none;
+}
+
+.dockview-theme-smart .dv-resize-container-with-titlebar > .dv-floating-titlebar {
+  position: relative;
+  cursor: grab;
+  border-top-left-radius: var(--dv-border-radius);
+  border-top-right-radius: var(--dv-border-radius);
+}
+
+/* Pega para arrastar a janela destacada */
+.dockview-theme-smart .dv-floating-titlebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 36px;
+  height: 4px;
+  margin: auto;
+  border-radius: var(--smart-radius-full, 9999px);
+  background-color: var(--smart-border-color);
+  transition: background-color var(--smart-transition-fast);
+}
+
+.dockview-theme-smart .dv-floating-titlebar:hover::before {
+  background-color: var(--smart-text-muted);
+}
