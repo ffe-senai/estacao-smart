@@ -1,12 +1,12 @@
 "use client"
 import dynamic from 'next/dynamic';
-import { expedicao } from "@/lib/smart-modules";
+import { rastreabilidade } from "@/lib/smart-modules";
 
-const Expedicao = dynamic(
-  () => expedicao.loadRemote<{ App: React.ComponentType }>('smart40_g5/Expedicao').then((module) => {
+const RastreabilidadeQrCode = dynamic(
+  () => rastreabilidade.loadRemote<{ default: React.ComponentType }>('smart40_g4/Traceability').then((module) => {
     console.log("Remote Module Exports:", module);
 
-    return module!.App;
+    return module!.default;
   }).catch((error: Error) => {
     console.error("Error loading remote module:", error);
     // eslint-disable-next-line react/display-name
@@ -18,4 +18,4 @@ const Expedicao = dynamic(
   }
 );
 
-export default Expedicao;
+export default RastreabilidadeQrCode;
