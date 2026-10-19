@@ -36,6 +36,11 @@ jobs:
     defaults:
       run:
         working-directory: app-shell
+    env:
+      G2_ENTRY: ${{ vars.G2_ENTRY }}
+      G3_ENTRY: ${{ vars.G3_ENTRY }}
+      G4_ENTRY: ${{ vars.G4_ENTRY }}
+      G5_ENTRY: ${{ vars.G5_ENTRY }}
     steps:
       - uses: actions/checkout@v4
 
