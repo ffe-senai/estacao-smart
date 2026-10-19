@@ -13,11 +13,11 @@ export const LAYOUT_PRESETS: readonly {
     description: string;
     icon: LucideIcon;
 }[] = [
-    { id: "grade", label: "Grade", description: "As quatro janelas em grade 2 × 2", icon: LayoutGrid },
-    { id: "colunas", label: "Colunas", description: "Uma coluna por módulo, para telas largas", icon: Columns4 },
-    { id: "foco", label: "Foco", description: "Janela ativa em destaque e as demais ao lado", icon: LayoutPanelLeft },
-    { id: "abas", label: "Abas", description: "Todas as janelas em abas, para telas pequenas", icon: SquareStack },
-];
+        { id: "grade", label: "Grade", description: "As quatro janelas em grade 2 × 2", icon: LayoutGrid },
+        { id: "colunas", label: "Colunas", description: "Uma coluna por módulo, para telas largas", icon: Columns4 },
+        { id: "foco", label: "Foco", description: "Janela ativa em destaque e as demais ao lado", icon: LayoutPanelLeft },
+        { id: "abas", label: "Abas", description: "Todas as janelas em abas, para telas pequenas", icon: SquareStack },
+    ];
 
 /** Em telas estreitas as janelas lado a lado ficam pequenas demais. */
 export function defaultPreset(width: number): LayoutPreset {
@@ -39,7 +39,7 @@ export function applyLayoutPreset(api: DockviewApi, preset: LayoutPreset) {
     const focused = getModule(api.activePanel?.id ?? "");
     api.clear();
 
-    const [a, b, c, d] = SMART_MODULES;
+    const [a, b, c, d] = SMART_MODULES.filter(m => m.id != "poc");
     switch (preset) {
         case "grade":
             addWindow(api, a);

@@ -12,11 +12,14 @@ export function WindowWatermark() {
     const { showModule, resetLayout } = useWorkspace();
 
     return (
-        <div className="flex h-full flex-col items-center justify-center gap-5 p-6 text-center text-smart-text-primary">
-            <Image src="/logos/smart_cube.png" alt="" width={72} height={72} className="opacity-30 grayscale" />
+        <div className="flex h-full flex-col items-center justify-center gap-6 p-6 text-center text-smart-text-primary">
+            <div className="flex flex-col items-center gap-3.5">
+                <Image src="/logos/smart_cube.png" alt="" width={72} height={72} />
+                <h1 className="uppercase font-bold text-2xl">Estação Smart 4.0</h1>
+            </div>
             <div className="space-y-1">
                 <p className="text-sm font-semibold tracking-[0.05em] uppercase">Nenhuma janela aberta</p>
-                <p className="text-sm text-smart-text-secondary">Abra um módulo.</p>
+                <p className="text-sm text-smart-text-secondary">Abra um módulo para começar.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
                 {SMART_MODULES.map((module) => {

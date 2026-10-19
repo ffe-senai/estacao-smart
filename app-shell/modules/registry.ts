@@ -41,7 +41,7 @@ export const SMART_MODULES: readonly SmartModule[] = [
         description: "Interface homem-máquina do CLP Siemens",
         icon: MonitorCog,
         accent: "var(--smart-accent-primary)",
-        // component: IhmSiemens
+        component: IhmSiemens
     },
     {
         id: "cobot-ur",
@@ -50,7 +50,7 @@ export const SMART_MODULES: readonly SmartModule[] = [
         description: "Robô colaborativo Universal Robots",
         icon: Bot,
         accent: "var(--smart-accent-cobot)",
-        // component: CobotUr
+        component: CobotUr
     },
     {
         id: "rastreabilidade",
@@ -59,7 +59,7 @@ export const SMART_MODULES: readonly SmartModule[] = [
         description: "Rastreio das peças por QR Code",
         icon: ScanQrCode,
         accent: "var(--smart-text-digital)",
-        // component: RastreabilidadeQrCode,
+        component: RastreabilidadeQrCode,
     },
     {
         id: "expedicao",
@@ -68,7 +68,7 @@ export const SMART_MODULES: readonly SmartModule[] = [
         description: "Saída dos produtos da estação",
         icon: Truck,
         accent: "var(--smart-accent-expedicao)",
-        // component: Expedicao
+        component: Expedicao
     }
 ];
 
