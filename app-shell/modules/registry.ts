@@ -1,7 +1,6 @@
 import type { ComponentType } from "react";
 import { Bot, MonitorCog, ScanQrCode, Truck, type LucideIcon } from "lucide-react";
 import RastreabilidadeQrCode from "@/modules/rastreabilidade-qrcode";
-import Expedicao from "./expedicao";
 
 export type SmartModule = {
     /** Id da janela no layout salvo. Mesmo nome da pasta do módulo no CI. */
@@ -54,7 +53,6 @@ export const SMART_MODULES: readonly SmartModule[] = [
         description: "Saída dos produtos da estação",
         icon: Truck,
         accent: "var(--smart-accent-expedicao)",
-        component: Expedicao
     },
 ];
 
