@@ -26,22 +26,3 @@ export const rastreabilidade = createInstance({
         'react/jsx-runtime': { version: v, lib: () => JSXRuntime, shareConfig: cfg },
     },
 });
-
-
-export const expedicao = createInstance({
-    name: "smart-modules",
-    remotes: [
-        {
-            type: 'module',
-            name: 'smart40_g5',
-            alias: "rastreabilidade-qrcode",
-            entry: 'https://expedicao-nu.vercel.app/remoteEntry.js',
-        }
-    ],
-    shared: {
-        react: { version: v, lib: () => React, shareConfig: cfg },
-        'react-dom': { version: v, lib: () => ReactDOM, shareConfig: cfg },
-        'react-dom/client': { version: v, lib: () => ReactDOMClient, shareConfig: cfg },
-        'react/jsx-runtime': { version: v, lib: () => JSXRuntime, shareConfig: cfg },
-    },
-});
