@@ -9,7 +9,7 @@ import * as JSXRuntime from 'react/jsx-runtime';
 const v = React.version;
 const cfg = { singleton: true, requiredVersion: false as const };
 
-export const rastreabilidade = createInstance({
+export const poc = createInstance({
     name: "smart-modules",
     remotes: [
         {

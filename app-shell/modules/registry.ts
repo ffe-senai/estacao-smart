@@ -1,6 +1,10 @@
 import type { ComponentType } from "react";
 import { Bot, MonitorCog, ScanQrCode, Truck, type LucideIcon } from "lucide-react";
-import RastreabilidadeQrCode from "@/modules/rastreabilidade-qrcode";
+import POC from "@/modules/poc";
+import { IhmSiemens } from "@/modules/ihm-siemens";
+import { CobotUr } from "@/modules/cobot-ur";
+import { RastreabilidadeQrCode } from "@/modules/rastreabilidade-qrcode";
+import { Expedicao } from "@/modules/expedicao";
 
 export type SmartModule = {
     /** Id da janela no layout salvo. Mesmo nome da pasta do módulo no CI. */
@@ -22,12 +26,22 @@ export type SmartModule = {
 /** Os quatro módulos da estação. Cada um abre na sua própria janela. */
 export const SMART_MODULES: readonly SmartModule[] = [
     {
+        id: "poc",
+        group: "POC",
+        title: "Prova de Conceito",
+        description: "POC (Proof of Concept)",
+        icon: ScanQrCode,
+        accent: "var(--smart-text-digital)",
+        component: POC,
+    },
+    {
         id: "ihm-siemens",
         group: "G2",
         title: "IHM Siemens",
         description: "Interface homem-máquina do CLP Siemens",
         icon: MonitorCog,
         accent: "var(--smart-accent-primary)",
+        // component: IhmSiemens
     },
     {
         id: "cobot-ur",
@@ -36,6 +50,7 @@ export const SMART_MODULES: readonly SmartModule[] = [
         description: "Robô colaborativo Universal Robots",
         icon: Bot,
         accent: "var(--smart-accent-cobot)",
+        // component: CobotUr
     },
     {
         id: "rastreabilidade",
@@ -44,7 +59,7 @@ export const SMART_MODULES: readonly SmartModule[] = [
         description: "Rastreio das peças por QR Code",
         icon: ScanQrCode,
         accent: "var(--smart-text-digital)",
-        component: RastreabilidadeQrCode,
+        // component: RastreabilidadeQrCode,
     },
     {
         id: "expedicao",
@@ -53,7 +68,8 @@ export const SMART_MODULES: readonly SmartModule[] = [
         description: "Saída dos produtos da estação",
         icon: Truck,
         accent: "var(--smart-accent-expedicao)",
-    },
+        // component: Expedicao
+    }
 ];
 
 export function getModule(id: string): SmartModule | undefined {
