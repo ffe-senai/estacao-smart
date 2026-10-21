@@ -1,7 +1,6 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import Image from "next/image";
 import { LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SMART_MODULES } from "@/modules/registry";
@@ -14,11 +13,11 @@ export function WindowWatermark() {
     return (
         <div className="flex h-full flex-col items-center justify-center gap-6 p-6 text-center text-smart-text-primary">
             <div className="flex flex-col items-center gap-3.5">
-                <Image src="/logos/smart_cube.png" alt="" width={72} height={72} />
+                <img src="/logos/smart_cube.png" alt="" width={72} height={72} />
                 <h1 className="uppercase font-bold text-2xl">Estação Smart 4.0</h1>
             </div>
             <div className="space-y-1">
-                <p className="text-sm font-semibold tracking-[0.05em] uppercase">Nenhuma janela aberta</p>
+                <p className="text-sm font-semibold tracking-wider uppercase">Nenhuma janela aberta</p>
                 <p className="text-sm text-smart-text-secondary">Abra um módulo para começar.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
