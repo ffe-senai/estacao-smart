@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   # Every PR: comment right away with a link to this run (replaced by `report` when it finishes)
-  started:
+  status:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -89,7 +89,7 @@ jobs:
 
   # Every PR: one comment with the result of each check, updated on every push
   report:
-    needs: [started, checks, modules, teste]
+    needs: [status, checks, modules, teste]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
