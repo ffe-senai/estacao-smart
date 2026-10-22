@@ -11,13 +11,13 @@ permissions:
   contents: read
 
 jobs:
-  shell:
+  app-shell:
     uses: ./.github/workflows/cd.yaml
     secrets: inherit
 
   # Production only: check and deploy every group's remote (submodules at the repo root)
   remotes:
-    needs: shell
-    if: needs.shell.outputs.target == 'prod'
+    needs: app-shell
+    if: needs.app-shell.outputs.target == 'prod'
     uses: ./.github/workflows/gm_deploy.yaml
     secrets: inherit
