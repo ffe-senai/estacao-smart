@@ -1,9 +1,8 @@
 name: group-modules_ci
 
 # Checks each group module (git submodule in a root folder) and, in production, deploys it.
-# A module whose folder doesn't exist (or is empty) is skipped; an existing module must pass every check.
-# Contract per module: package.json and a lockfile (package-lock.json or pnpm-lock.yaml) at the root,
-# the scripts check and build, and a build that generates dist/remoteEntry.js.
+# A module without a submodule is skipped; an existing module must pass every check (see gm_module.yaml).
+# Production deploys only run after every existing module passed.
 # Called by ci.yaml on every PR (check only) and by deploy.yaml after a production deploy (check + deploy).
 on:
   workflow_call:
@@ -20,81 +19,65 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  # Submodules registered in .gitmodules; each module job below runs only if its folder is one of them
+  modules:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false        # one module failing doesn't cancel the others
-      matrix:
-        include: &modules     # module folder -> production subdomain
-          - { folder: ihm-siemens,     domain: g2 }
-          - { folder: cobot-ur,        domain: g3 }
-          - { folder: rastreabilidade, domain: g4 }
-          - { folder: expedicao,       domain: g5 }
-          - { folder: poc,             domain: poc }
-    name: check (${{ matrix.folder }})
-    defaults:
-      run:
-        shell: bash
-    env:
-      FOLDER: ${{ matrix.folder }}
-      GROUP: ${{ matrix.domain }}
+    outputs:
+      found: ${{ steps.list.outputs.found }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-          token: ${{ secrets.REMOTES_TOKEN || github.token }}   # REMOTES_TOKEN only needed if group repos are private
+      - uses: actions/checkout@v4   # without submodules: only reads .gitmodules
 
-      - name: Find module
-        id: find
+      - name: List modules
+        id: list
         run: |
-          if [ -n "$(ls -A "$FOLDER" 2>/dev/null)" ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Module folder '$FOLDER' not found, skipping"
-          fi
+          paths=$(git config -f .gitmodules --get-regexp '\.path$' 2>/dev/null | awk '{print $2}' || true)
+          echo "found=$(printf '%s\n' $paths | jq -Rsc 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+          echo "Modules: ${paths:-none}"
 
-      - uses: actions/setup-node@v4
-        if: steps.find.outputs.found
-        with:
-          node-version: 24
+  # One job per module (folder -> production subdomain)
+  check-ihm-siemens:
+    name: check (ihm-siemens)
+    needs: modules
+    if: contains(fromJSON(needs.modules.outputs.found), 'ihm-siemens')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: ihm-siemens, domain: g2 }
+    secrets: inherit
 
-      - name: Validate module
-        if: steps.find.outputs.found
-        working-directory: ${{ matrix.folder }}
-        run: |
-          # Package manager from the lockfile the group committed
-          if   [ -f pnpm-lock.yaml ];    then pm=pnpm install="pnpm install --frozen-lockfile"
-          elif [ -f package-lock.json ]; then pm=npm  install="npm ci"
-          fi
+  check-cobot-ur:
+    name: check (cobot-ur)
+    needs: modules
+    if: contains(fromJSON(needs.modules.outputs.found), 'cobot-ur')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: cobot-ur, domain: g3 }
+    secrets: inherit
 
-          problem=""
-          if   [ ! -f package.json ];                   then problem="falta o \`package.json\` na raiz"
-          elif [ -z "$pm" ];                            then problem="falta o lockfile (\`package-lock.json\` ou \`pnpm-lock.yaml\`)"
-          elif ! jq -e .scripts.check package.json >/dev/null; then problem="falta o script \`check\`"
-          elif ! jq -e .scripts.build package.json >/dev/null; then problem="falta o script \`build\`"
-          elif [ "$pm" = pnpm ] && ! npm i -g pnpm;     then problem="não foi possível instalar o pnpm"
-          elif ! $install;                              then problem="\`$install\` falhou"
-          elif ! $pm run check;                         then problem="\`$pm run check\` falhou"
-          elif ! $pm run build;                         then problem="\`$pm run build\` falhou"
-          elif [ ! -f dist/remoteEntry.js ];            then problem="o build não gerou \`dist/remoteEntry.js\`"
-          fi
+  check-rastreabilidade:
+    name: check (rastreabilidade)
+    needs: modules
+    if: contains(fromJSON(needs.modules.outputs.found), 'rastreabilidade')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: rastreabilidade, domain: g4 }
+    secrets: inherit
 
-          if [ -n "$problem" ]; then
-            echo "❌ Módulo ${GROUP^^} \`$FOLDER\` incompatível: $problem" > "$RUNNER_TEMP/result.md"
-            exit 1
-          fi
-          echo "✅ Módulo ${GROUP^^} \`$FOLDER\` compatível" > "$RUNNER_TEMP/result.md"
+  check-expedicao:
+    name: check (expedicao)
+    needs: modules
+    if: contains(fromJSON(needs.modules.outputs.found), 'expedicao')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: expedicao, domain: g5 }
+    secrets: inherit
 
-      - uses: actions/upload-artifact@v4
-        if: always() && steps.find.outputs.found
-        with:
-          name: module-${{ matrix.folder }}
-          path: ${{ runner.temp }}/result.md
-          if-no-files-found: ignore
+  check-poc:
+    name: check (poc)
+    needs: modules
+    if: contains(fromJSON(needs.modules.outputs.found), 'poc')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: poc, domain: poc }
+    secrets: inherit
 
   # Joins the result of every module into one report (and fails if any module failed)
   result:
-    needs: check
+    needs: [check-ihm-siemens, check-cobot-ur, check-rastreabilidade, check-expedicao, check-poc]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     outputs:
@@ -109,81 +92,52 @@ jobs:
       - name: Collect results
         id: collect
         env:
-          CHECK: ${{ needs.check.result }}
+          FAILED: ${{ contains(needs.*.result, 'failure') }}
         run: |
           {
             echo "report<<EOF"
             cat results/*/result.md 2>/dev/null || true
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
-          [ "$CHECK" != failure ]
+          [ "$FAILED" != true ]
 
   # Production only: deploy every module that exists, after all checks passed
-  deploy:
-    needs: check
-    if: inputs.deploy
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include: *modules
-    name: deploy (${{ matrix.folder }})
-    environment:
-      name: Produção
-      url: https://${{ matrix.domain }}.ffe-senai.com.br
-    concurrency: gm-ci-${{ matrix.folder }}
-    defaults:
-      run:
-        shell: bash
-    env:
-      FOLDER: ${{ matrix.folder }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ fromJSON(secrets.GM_PROJECTS)[matrix.folder] }}   # Produção secret: {"ihm-siemens":"prj_...","cobot-ur":"prj_...",...}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-          token: ${{ secrets.REMOTES_TOKEN || github.token }}
+  deploy-ihm-siemens:
+    name: deploy (ihm-siemens)
+    needs: [modules, result]
+    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'ihm-siemens')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: ihm-siemens, domain: g2, deploy: true }
+    secrets: inherit
 
-      - name: Find module
-        id: find
-        run: |
-          if [ -n "$(ls -A "$FOLDER" 2>/dev/null)" ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Module folder '$FOLDER' not found, skipping"
-          fi
+  deploy-cobot-ur:
+    name: deploy (cobot-ur)
+    needs: [modules, result]
+    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'cobot-ur')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: cobot-ur, domain: g3, deploy: true }
+    secrets: inherit
 
-      - uses: actions/setup-node@v4
-        if: steps.find.outputs.found
-        with:
-          node-version: 24
+  deploy-rastreabilidade:
+    name: deploy (rastreabilidade)
+    needs: [modules, result]
+    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'rastreabilidade')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: rastreabilidade, domain: g4, deploy: true }
+    secrets: inherit
 
-      - name: Deploy
-        if: steps.find.outputs.found
-        working-directory: ${{ matrix.folder }}
-        run: |
-          npm i -g vercel@latest
+  deploy-expedicao:
+    name: deploy (expedicao)
+    needs: [modules, result]
+    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'expedicao')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: expedicao, domain: g5, deploy: true }
+    secrets: inherit
 
-          # Standard config for every module; replaces any vercel.json in their repo
-          cat > vercel.json <<'EOF'
-          {
-            "buildCommand": "npm run build",
-            "outputDirectory": "dist",
-            "headers": [
-              {
-                "source": "/(.*)",
-                "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }]
-              },
-              {
-                "source": "/remoteEntry.js",
-                "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-              }
-            ]
-          }
-          EOF
-
-          vercel pull --yes --environment=production
-          vercel build --target=production
-          vercel deploy --prebuilt --target=production
+  deploy-poc:
+    name: deploy (poc)
+    needs: [modules, result]
+    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'poc')
+    uses: ./.github/workflows/gm_module.yaml
+    with: { folder: poc, domain: poc, deploy: true }
+    secrets: inherit
