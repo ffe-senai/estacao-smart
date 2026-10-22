@@ -1,7 +1,7 @@
 name: group-modules_ci
 
 # Checks each group module (git submodule in a root folder); a module without a submodule is skipped.
-# An existing module must pass every check (see gm_module.yaml).
+# An existing module must pass every check (see gm_check.yaml).
 # Called by ci.yaml on every PR and by gm_deploy.yaml before the production deploy of the modules.
 on:
   workflow_call:
@@ -37,7 +37,7 @@ jobs:
     name: check (ihm-siemens)
     needs: modules
     if: contains(fromJSON(needs.modules.outputs.found), 'ihm-siemens')
-    uses: ./.github/workflows/gm_module.yaml
+    uses: ./.github/workflows/gm_check.yaml
     with: { folder: ihm-siemens, domain: g2 }
     secrets: inherit
 
@@ -45,7 +45,7 @@ jobs:
     name: check (cobot-ur)
     needs: modules
     if: contains(fromJSON(needs.modules.outputs.found), 'cobot-ur')
-    uses: ./.github/workflows/gm_module.yaml
+    uses: ./.github/workflows/gm_check.yaml
     with: { folder: cobot-ur, domain: g3 }
     secrets: inherit
 
@@ -53,7 +53,7 @@ jobs:
     name: check (rastreabilidade)
     needs: modules
     if: contains(fromJSON(needs.modules.outputs.found), 'rastreabilidade')
-    uses: ./.github/workflows/gm_module.yaml
+    uses: ./.github/workflows/gm_check.yaml
     with: { folder: rastreabilidade, domain: g4 }
     secrets: inherit
 
@@ -61,7 +61,7 @@ jobs:
     name: check (expedicao)
     needs: modules
     if: contains(fromJSON(needs.modules.outputs.found), 'expedicao')
-    uses: ./.github/workflows/gm_module.yaml
+    uses: ./.github/workflows/gm_check.yaml
     with: { folder: expedicao, domain: g5 }
     secrets: inherit
 
@@ -69,7 +69,7 @@ jobs:
     name: check (poc)
     needs: modules
     if: contains(fromJSON(needs.modules.outputs.found), 'poc')
-    uses: ./.github/workflows/gm_module.yaml
+    uses: ./.github/workflows/gm_check.yaml
     with: { folder: poc, domain: poc }
     secrets: inherit
 

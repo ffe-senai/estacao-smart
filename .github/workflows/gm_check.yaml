@@ -1,4 +1,4 @@
-name: group-module
+name: group-module_check
 
 # Checks one group module. Called by gm_ci.yaml once per module.
 # Contract per module: package.json and a lockfile (package-lock.json or pnpm-lock.yaml) at the root,
