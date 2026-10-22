@@ -25,7 +25,7 @@ jobs:
     outputs:
       found: ${{ steps.list.outputs.found }}
     steps:
-      - uses: actions/checkout@v4   # without submodules: only reads .gitmodules
+      - uses: actions/checkout@v7   # without submodules: only reads .gitmodules
 
       - name: List modules
         id: list
@@ -83,7 +83,7 @@ jobs:
     outputs:
       report: ${{ steps.collect.outputs.report }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         continue-on-error: true   # no artifacts when every module was skipped
         with:
           pattern: module-*
