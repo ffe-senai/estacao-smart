@@ -28,7 +28,9 @@ jobs:
           body="⏳ Verificações em andamento: lint, typecheck, build e módulos"
           if [ "$GITHUB_BASE_REF" = dev ]; then body+=", seguidas do deploy no ambiente de **Teste**"; fi
           body+=$'\n\n'"Commit \`${SHA:0:7}\` · [Acompanhar execução]($RUN_URL)"
-          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --edit-last --create-if-none --body "$body"
+          # Replace the previous comment so the latest one is always at the end of the PR
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --delete-last --yes || true   # none on the first run
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "$body"
 
   # Every PR: lint, typecheck and build
   checks:
@@ -154,4 +156,6 @@ jobs:
           esac
 
           body+=$'\n'"Commit \`${SHA:0:7}\` · [Ver execução]($RUN_URL)"
-          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --edit-last --create-if-none --body "$body"
+          # Replace the previous comment so the latest one is always at the end of the PR
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --delete-last --yes || true   # none on the first run
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "$body"
