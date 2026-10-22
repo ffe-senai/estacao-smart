@@ -18,12 +18,12 @@
 
 | Pasta / arquivo | O que é | Quem altera |
 |---|---|---|
-| `app-shell/` | A aplicação ([Modern.js](#modernjs)). Todo o código fica aqui | G1 |
-| `poc/` | Submódulo [POC](https://github.com/ffe-senai/poc), módulo de exemplo integrado via [Module Federation](#module-federation) | Time DevOps |
-| `ihm-siemens/` | Submódulo do módulo IHM Siemens ([integração](#próximos-passos---integrar-módulo)) | G2 |
-| `cobot-ur/` | Submódulo do módulo Cobot UR ([integração](#próximos-passos---integrar-módulo)) | G3 |
-| `rastreabilidade/` | Submódulo do módulo Rastreabilidade ([integração](#próximos-passos---integrar-módulo)) | G4 |
-| `expedicao/` | Submódulo do módulo Expedição ([integração](#próximos-passos---integrar-módulo)) | G5 |
+| `app-shell/` | Aplicação Shell ([Modern.js](#modernjs)) & orquestrador de módulos | G1 |
+| `poc/` | Submódulo Git do módulo [POC (Prova de Conceito)](https://github.com/ffe-senai/poc) | Time DevOps |
+| `ihm-siemens/` | Submódulo Git do módulo IHM Siemens ([integração](#próximos-passos---integrar-módulo)) | G2 |
+| `cobot-ur/` | Submódulo Git do módulo Cobot UR ([integração](#próximos-passos---integrar-módulo)) | G3 |
+| `rastreabilidade/` | Submódulo Git do módulo Rastreabilidade ([integração](#próximos-passos---integrar-módulo)) | G4 |
+| `expedicao/` | Submódulo Git do módulo Expedição ([integração](#próximos-passos---integrar-módulo)) | G5 |
 | `.github/` | Workflows de CI/CD e regras do repositório | Time DevOps |
 
 Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `dist/` e `.env*` já são ignorados pelo `.gitignore` e **nunca** devem ser enviados.
