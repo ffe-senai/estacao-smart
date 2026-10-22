@@ -1,9 +1,28 @@
-<!-- BEGIN:nextjs-agent-rules -->
+<!-- BEGIN:modernjs-agent-rules -->
 
-## This is NOT the Next.js you know
+# Modern.js: read the docs before you code
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+> Documentation: **`node_modules/@modern-js/app-tools/docs/`**
+> Index: `node_modules/@modern-js/app-tools/docs/llms.txt` — start here when unsure which page to open
 
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+These docs ship inside the package, so they match the Modern.js
+version this project installed exactly. Your training data is likely
+outdated — **treat them as the source of truth**, and do not answer
+from memory on Modern.js configuration, APIs or directory conventions.
 
-<!-- END:nextjs-agent-rules -->
+**🟢 Read the docs before you touch anything, except for:**
+
+- Writing ordinary React components (not route components)
+- Editing CSS or style files
+- Adding utility functions or business logic
+- Installing ordinary npm packages (unrelated to Modern.js)
+
+<!-- END:modernjs-agent-rules -->
+
+# Rstack CLI
+
+This project uses Rstack CLI as its JS toolchain:
+
+- Read the docs linked from `node_modules/rstack/docs/llms.txt` when needed
+- Online docs: https://rstack.rs/llms.txt
+- Run `rs -h` for CLI help

@@ -12,32 +12,68 @@ concurrency:
   cancel-in-progress: true    # a new push cancels the previous run
 
 jobs:
+  # Every PR: comment right away with a link to this run (replaced by `report` when it finishes)
+  started:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ github.event.pull_request.head.sha }}
+      PR: ${{ github.event.pull_request.number }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Comment run link on the PR
+        run: |
+          body="⏳ Verificações em andamento: lint, typecheck, build e módulos"
+          if [ "$GITHUB_BASE_REF" = dev ]; then body+=", seguidas do deploy no ambiente de **Teste**"; fi
+          body+=$'\n\n'"Commit \`${SHA:0:7}\` · [Acompanhar execução]($RUN_URL)"
+          # Replace the previous comment so the latest one is always at the end of the PR
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --delete-last --yes || true   # none on the first run
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "$body"
+
   # Every PR: lint, typecheck and build
   checks:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: app-shell
+    env:
+      G2_ENTRY: ${{ vars.G2_ENTRY }}
+      G3_ENTRY: ${{ vars.G3_ENTRY }}
+      G4_ENTRY: ${{ vars.G4_ENTRY }}
+      G5_ENTRY: ${{ vars.G5_ENTRY }}
+      POC_ENTRY: ${{ vars.POC_ENTRY }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app-shell/package.json   # version from "packageManager"
 
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: app-shell/package-lock.json
+          cache: pnpm
+          cache-dependency-path: app-shell/pnpm-lock.yaml
 
       - name: Install
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Build
-        run: npm run build
+        env:
+          G2_ENTRY: ${{ vars.G2_ENTRY }}
+          G3_ENTRY: ${{ vars.G3_ENTRY }}
+          G4_ENTRY: ${{ vars.G4_ENTRY }}
+          G5_ENTRY: ${{ vars.G5_ENTRY }}
+          POC_ENTRY: ${{ vars.POC_ENTRY }}
+        run: pnpm run build
 
   # PR into prod: must come from dev, and dev's commit must have a beta pre-release
   from-dev:
@@ -64,6 +100,11 @@ jobs:
           fi
           echo "Pre-release found: $betas"
 
+  # Every PR: check each group module whose folder exists (required to merge)
+  modules:
+    uses: ./.github/workflows/gm_ci.yaml
+    secrets: inherit
+
   # PR into dev: deploy a Teste preview once checks pass
   teste:
     needs: checks
@@ -73,7 +114,7 @@ jobs:
 
   # Every PR: one comment with the result of each check, updated on every push
   report:
-    needs: [checks, from-dev, teste]
+    needs: [started, checks, modules, from-dev, teste]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
@@ -84,6 +125,7 @@ jobs:
       FROM_DEV: ${{ needs.from-dev.result }}
       TESTE: ${{ needs.teste.result }}
       URL: ${{ needs.teste.outputs.url }}
+      MODULES: ${{ needs.modules.outputs.report }}
       SHA: ${{ github.event.pull_request.head.sha }}
       PR: ${{ github.event.pull_request.number }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -98,6 +140,10 @@ jobs:
             failure) line "❌ **Checagem de compilação e sintaxe inválida** (lint, typecheck ou build)" ;;
           esac
 
+          while IFS= read -r module; do
+            if [ -n "$module" ]; then line "$module"; fi
+          done <<< "$MODULES"
+
           case "$FROM_DEV" in
             success) line "✅ Origem \`dev\` com pré-release" ;;
             failure) line "❌ PR para \`prod\` precisa vir da \`dev\` com pré-release" ;;
@@ -110,4 +156,6 @@ jobs:
           esac
 
           body+=$'\n'"Commit \`${SHA:0:7}\` · [Ver execução]($RUN_URL)"
-          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --edit-last --create-if-none --body "$body"
+          # Replace the previous comment so the latest one is always at the end of the PR
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --delete-last --yes || true   # none on the first run
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "$body"

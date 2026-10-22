@@ -1,0 +1,46 @@
+"use client";
+
+import type { CSSProperties } from "react";
+import { LayoutDashboard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SMART_MODULES } from "@/modules/registry";
+import { useWorkspace } from "./workspace-context";
+
+/** Mostrado quando todas as janelas estão fechadas. */
+export function WindowWatermark() {
+    const { showModule, resetLayout } = useWorkspace();
+
+    return (
+        <div className="flex h-full flex-col items-center justify-center gap-6 p-6 text-center text-smart-text-primary">
+            <div className="flex flex-col items-center gap-3.5">
+                <img src="/logos/smart_cube.png" alt="" width={72} height={72} />
+                <h1 className="uppercase font-bold text-2xl">Estação Smart 4.0</h1>
+            </div>
+            <div className="space-y-1">
+                <p className="text-sm font-semibold tracking-wider uppercase">Nenhuma janela aberta</p>
+                <p className="text-sm text-smart-text-secondary">Abra um módulo para começar.</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+                {SMART_MODULES.map((module) => {
+                    const Icon = module.icon;
+                    return (
+                        <Button
+                            key={module.id}
+                            variant="outline"
+                            size="sm"
+                            style={{ "--module-accent": module.accent } as CSSProperties}
+                            onClick={() => showModule(module)}
+                        >
+                            <Icon className="text-(--module-accent)" />
+                            {module.title}
+                        </Button>
+                    );
+                })}
+            </div>
+            <Button onClick={resetLayout}>
+                <LayoutDashboard />
+                Abrir todos
+            </Button>
+        </div>
+    );
+}
