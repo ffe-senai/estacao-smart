@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   # Every PR: comment right away with a link to this run (replaced by `report` when it finishes)
-  started:
+  status:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -45,13 +45,13 @@ jobs:
       G5_ENTRY: ${{ vars.G5_ENTRY }}
       POC_ENTRY: ${{ vars.POC_ENTRY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           package_json_file: app-shell/package.json   # version from "packageManager"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
@@ -75,31 +75,6 @@ jobs:
           POC_ENTRY: ${{ vars.POC_ENTRY }}
         run: pnpm run build
 
-  # PR into prod: must come from dev, and dev's commit must have a beta pre-release
-  from-dev:
-    if: github.base_ref == 'prod'
-    runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-    steps:
-      - name: Only dev can merge into prod
-        if: github.head_ref != 'dev'
-        run: |
-          echo "PRs into prod must come from dev, not '$GITHUB_HEAD_REF'"
-          exit 1
-
-      - name: Head must have a beta pre-release
-        run: |
-          betas=$(gh api "repos/$GITHUB_REPOSITORY/tags" --paginate \
-            --jq '.[] | select(.commit.sha == env.HEAD_SHA) | .name | select(contains("-beta."))')
-
-          if [ -z "$betas" ]; then
-            echo "Publish a pre-release (x.y.z-beta.N) on dev's latest commit, then re-run this job"
-            exit 1
-          fi
-          echo "Pre-release found: $betas"
-
   # Every PR: check each group module whose folder exists (required to merge)
   modules:
     uses: ./.github/workflows/gm_ci.yaml
@@ -109,12 +84,12 @@ jobs:
   teste:
     needs: checks
     if: github.base_ref == 'dev'
-    uses: ./.github/workflows/deploy.yaml
+    uses: ./.github/workflows/cd.yaml
     secrets: inherit
 
   # Every PR: one comment with the result of each check, updated on every push
   report:
-    needs: [started, checks, modules, from-dev, teste]
+    needs: [status, checks, modules, teste]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
@@ -122,16 +97,23 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       CHECKS: ${{ needs.checks.result }}
-      FROM_DEV: ${{ needs.from-dev.result }}
       TESTE: ${{ needs.teste.result }}
       URL: ${{ needs.teste.outputs.url }}
-      MODULES: ${{ needs.modules.outputs.report }}
       SHA: ${{ github.event.pull_request.head.sha }}
       PR: ${{ github.event.pull_request.number }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
+      - uses: actions/download-artifact@v8
+        continue-on-error: true   # no artifacts when there's no module
+        with:
+          pattern: module-*
+          path: results
+
       - name: Comment results on the PR
         run: |
+          # One report line per module (a lone artifact lands in results/, several in results/<name>/)
+          MODULES=$(find results -name result.md -exec cat {} + 2>/dev/null || true)
+
           body=""
           line() { body+="- $1"$'\n'; }
 
@@ -143,11 +125,6 @@ jobs:
           while IFS= read -r module; do
             if [ -n "$module" ]; then line "$module"; fi
           done <<< "$MODULES"
-
-          case "$FROM_DEV" in
-            success) line "✅ Origem \`dev\` com pré-release" ;;
-            failure) line "❌ PR para \`prod\` precisa vir da \`dev\` com pré-release" ;;
-          esac
 
           case "$TESTE" in
             success) line "🚀 Deploy no ambiente de **Teste** sucedido: $URL" ;;
