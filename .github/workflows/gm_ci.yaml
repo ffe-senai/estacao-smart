@@ -30,6 +30,7 @@ jobs:
           - { folder: cobot-ur,        domain: g3 }
           - { folder: rastreabilidade, domain: g4 }
           - { folder: expedicao,       domain: g5 }
+          - { folder: poc,             domain: poc }
     name: check (${{ matrix.folder }})
     defaults:
       run:

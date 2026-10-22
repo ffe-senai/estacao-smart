@@ -1,27 +1,27 @@
-// "use client";
+"use client";
 
-// import * as mf from "@module-federation/enhanced/runtime";
+import * as mf from "@module-federation/enhanced/runtime";
 
-// export const MODULE_NAME = "smart";
+export const MODULE_NAME = "smart";
 
-// export const createInstance = (name: string, entry: string) =>
-//     mf.createInstance({
-//         name: name,
+export const createInstance = (name: string, entry: string) =>
+    mf.createInstance({
+        name: name,
 
-//         remotes: [
-//             {
-//                 type: "module",
-//                 name: MODULE_NAME,
-//                 alias: name,
-//                 entry: entry,
-//             },
-//         ],
-//     });
+        remotes: [
+            {
+                type: "module",
+                name: MODULE_NAME,
+                alias: name,
+                entry,
+            },
+        ],
+    });
 
-// // Uses globalThis.env set up in src/config/env.ts
-// const ihmSiemens = createInstance("ihm-siemens", g2entry);
-// const cobotUr = createInstance("cobot-ur", g3entry);
-// const rastreabilidade = createInstance("rastreabilidade", g4entry);
-// const expedicao = createInstance("expedicao", g5entry);
-// const poc = createInstance("poc", pocentry)
-// export { ihmSiemens, cobotUr, rastreabilidade, expedicao, poc };
+// Uses globalThis.env set up in src/config/env.ts
+const ihmSiemens = createInstance(ModuleRemotes.IhmSiemens, g2entry);
+const cobotUr = createInstance(ModuleRemotes.CobotUr, g3entry);
+const rastreabilidade = createInstance(ModuleRemotes.RastreabilidadeQrCode, g4entry);
+const expedicao = createInstance(ModuleRemotes.Expedicao, g5entry);
+const poc = createInstance(ModuleRemotes.Poc, pocentry)
+export { ihmSiemens, cobotUr, rastreabilidade, expedicao, poc };

@@ -14,7 +14,7 @@ permissions:
 
 env:
   DOMAIN: ffe-senai.com.br
-  RESERVED_SUBDOMAINS: dev www prod g2 g3 g4 g5
+  RESERVED_SUBDOMAINS: dev www prod g2 g3 g4 g5 poc
 
 jobs:
   resolve:
@@ -82,9 +82,12 @@ jobs:
           G3_ENTRY: ${{ vars.G3_ENTRY }}
           G4_ENTRY: ${{ vars.G4_ENTRY }}
           G5_ENTRY: ${{ vars.G5_ENTRY }}
+          POC_ENTRY: ${{ vars.POC_ENTRY }}
         run: |
           if [ "$TARGET" = prod ]; then   # production always loads the groups from their fixed subdomains
-            export G2_ENTRY="https://g2.$DOMAIN" G3_ENTRY="https://g3.$DOMAIN" G4_ENTRY="https://g4.$DOMAIN" G5_ENTRY="https://g5.$DOMAIN"
+            for group in G2 G3 G4 G5 POC; do
+              export "${group}_ENTRY=https://${group,,}.$DOMAIN/remoteEntry.js"
+            done
           fi
           vercel build --target="$VERCEL_ENV"
 

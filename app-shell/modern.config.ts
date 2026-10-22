@@ -40,6 +40,11 @@ export default defineConfig({
   server: {
     port: 80
   },
+  performance: {
+    // O cache persistente do Rspack fica inconsistente com o Module Federation entre
+    // reinícios do dev server ("Element type is invalid ... RouterWrapper").
+    buildCache: false
+  },
   plugins: [
     appTools(),
     moduleFederationPlugin()

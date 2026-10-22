@@ -56,6 +56,79 @@ Para instalar o app-shel e rodar a aplicação, siga o [README do app-shell](app
 | `ci/*` | Configuração da integração contínua |
 | `revert/*` | Desfazer alterações anteriores |
 
+## Próximos Passos - Integrar Módulo
+
+Cada grupo publica seu módulo como um *remote* de [Module Federation](https://module-federation.io). O App Shell carrega o `remoteEntry.js` do grupo e renderiza o módulo na janela dele, com o CSS isolado.
+
+| Grupo | Pasta (submódulo) | Variável | Produção |
+|---|---|---|---|
+| G2 | `ihm-siemens` | `G2_ENTRY` | `g2.ffe-senai.com.br` |
+| G3 | `cobot-ur` | `G3_ENTRY` | `g3.ffe-senai.com.br` |
+| G4 | `rastreabilidade` | `G4_ENTRY` | `g4.ffe-senai.com.br` |
+| G5 | `expedicao` | `G5_ENTRY` | `g5.ffe-senai.com.br` |
+
+**1. Adicione o repositório do módulo como submódulo**, na raiz, com a pasta do grupo:
+
+```bash
+git submodule add https://github.com/ffe-senai/<repositorio-do-grupo>.git <pasta>
+```
+
+**2. Configure o Module Federation no módulo** (exemplo com Vite):
+
+```bash
+npm i @module-federation/bridge-react
+npm i -D @module-federation/vite
+```
+
+```ts
+// vite.config.ts
+import { federation } from "@module-federation/vite";
+
+export default defineConfig({
+  base: "./",
+  plugins: [
+    react(),
+    federation({
+      name: "smart",
+      filename: "remoteEntry.js",
+      exposes: { ".": "./src/ModuleBridge.tsx" },
+      dts: false,
+    }),
+  ],
+});
+```
+
+```tsx
+// src/ModuleBridge.tsx
+import App from "./App";
+import { createBridgeComponent } from "@module-federation/bridge-react/v19";
+
+export default createBridgeComponent({ rootComponent: App });
+```
+
+| Regra | Por quê |
+|---|---|
+| `name: "smart"` | Nome que o App Shell procura em todos os módulos |
+| `exposes` com `"."` | O App Shell carrega o expose padrão do remote |
+| `bridge-react/v19` | O App Shell usa React 19 |
+| Sem `shared` | Cada módulo roda com o próprio React, isolado pelo bridge |
+| `base: "./"` | Imagens e assets carregam do domínio do módulo |
+
+**3. Atenda ao contrato do CI**, verificado a cada PR:
+
+- `package.json` e `package-lock.json` na raiz do módulo.
+- Scripts `check` (lint e tipagem) e `build`.
+- O `build` gera `dist/remoteEntry.js`.
+
+**4. Aponte a variável do grupo** para a URL completa do `remoteEntry.js`:
+
+- **Local:** em `app-shell/.env`, por exemplo `G2_ENTRY="http://localhost:5001/remoteEntry.js"`.
+- **Teste e Desenvolvimento:** em **Settings → Secrets and variables → Actions → Variables**, crie `G2_ENTRY`.
+- **Produção:** automático, a partir do subdomínio do grupo (`https://g2.ffe-senai.com.br/remoteEntry.js`).
+
+> 💡 **Dica**<br>
+> O [POC](https://github.com/ffe-senai/poc) é um exemplo de módulo integrado ao App Shell.
+
 ## Fluxo de Trabalho
 
 A seguir, um guia passo a passo sobre o **Fluxo de Trabalho das Operações de Desenvolvimento**.

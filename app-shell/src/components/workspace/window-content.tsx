@@ -2,11 +2,12 @@
 
 import { Component, Suspense, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import type { IDockviewPanelProps } from "dockview-react";
-import { Loader2, OctagonX, RefreshCw } from "lucide-react";
+import { Frown, Loader2, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getModule, type SmartModule } from "@/modules/registry";
 import { useModuleStatusStore } from "./module-status";
+import { WindowState } from "./window-state";
 
 /** Conteúdo de uma janela. O id do painel é o id do módulo. */
 export function WindowContent({ api }: IDockviewPanelProps) {
@@ -79,16 +80,6 @@ class WindowErrorBoundary extends Component<BoundaryProps, { error: Error | null
    Estados da janela
    -------------------------------------------------------------------------- */
 
-function WindowState({ icon, title, children }: { icon?: ReactNode; title: string; children?: ReactNode }) {
-    return (
-        <div className="flex min-h-full flex-col items-center justify-center gap-3 p-6 text-center">
-            {icon}
-            <p className="text-sm font-semibold tracking-[0.05em] uppercase">{title}</p>
-            {children}
-        </div>
-    );
-}
-
 function ModuleIconTile({ module }: { module: SmartModule }) {
     const Icon = module.icon;
     return (
@@ -127,7 +118,7 @@ function ModuleLoading({ module }: { module: SmartModule }) {
 function ModuleError({ module, error, onRetry }: { module: SmartModule; error: Error; onRetry: () => void }) {
     return (
         <WindowState
-            icon={<OctagonX className="size-9 text-smart-status-danger drop-shadow-[0_0_8px_var(--smart-status-danger-glow)]" />}
+            icon={<Frown className="size-9 text-smart-status-danger drop-shadow-[0_0_8px_var(--smart-status-danger-glow)]" />}
             title="Falha no módulo"
         >
             <p className="max-w-sm text-sm text-smart-text-secondary">A janela {module.title} parou com um erro.</p>

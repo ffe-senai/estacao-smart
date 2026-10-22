@@ -16,13 +16,6 @@ const pocentry = process.env.POC_ENTRY;
 
 export default createModuleFederationConfig({
     name: "smart",
-    remotes: {
-        ...(g2entry ? { [Remotes.IhmSiemens]: `smart@${g2entry}` } : {}),
-        ...(g3entry ? { [Remotes.CobotUr]: `smart@${g3entry}` } : {}),
-        ...(g4entry ? { [Remotes.RastreabilidadeQrCode]: `smart@${g4entry}` } : {}),
-        ...(g5entry ? { [Remotes.Expedicao]: `smart@${g5entry}` } : {}),
-        ...(pocentry ? { [Remotes.Poc]: `smart@${pocentry}` } : {}),
-    },
     bridge: {
         enableBridgeRouter: false
     },
