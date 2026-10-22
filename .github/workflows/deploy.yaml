@@ -149,7 +149,5 @@ jobs:
   remotes:
     needs: [resolve, deploy]
     if: needs.resolve.outputs.target == 'prod'
-    uses: ./.github/workflows/gm_ci.yaml
-    with:
-      deploy: true
+    uses: ./.github/workflows/gm_deploy.yaml
     secrets: inherit

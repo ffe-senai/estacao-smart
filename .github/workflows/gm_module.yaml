@@ -1,6 +1,6 @@
 name: group-module
 
-# Checks (or, in production, deploys) one group module. Called by gm_ci.yaml once per module.
+# Checks one group module. Called by gm_ci.yaml once per module.
 # Contract per module: package.json and a lockfile (package-lock.json or pnpm-lock.yaml) at the root,
 # the scripts check and build, and a build that generates dist/remoteEntry.js.
 on:
@@ -12,16 +12,12 @@ on:
       domain:             # production subdomain (g2, g3, ..., poc)
         type: string
         required: true
-      deploy:
-        type: boolean
-        default: false
 
 permissions:
   contents: read
 
 jobs:
   check:
-    if: ${{ !inputs.deploy }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -72,53 +68,3 @@ jobs:
           path: ${{ runner.temp }}/result.md
           if-no-files-found: ignore
 
-  deploy:
-    if: ${{ inputs.deploy }}
-    runs-on: ubuntu-latest
-    environment:
-      name: Produção
-      url: https://${{ inputs.domain }}.ffe-senai.com.br
-    concurrency: gm-ci-${{ inputs.folder }}
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ inputs.folder }}
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ fromJSON(secrets.GM_PROJECTS)[inputs.folder] }}   # Produção secret: {"ihm-siemens":"prj_...","cobot-ur":"prj_...",...}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: true
-          token: ${{ secrets.REMOTES_TOKEN || github.token }}
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-
-      - name: Deploy
-        run: |
-          npm i -g vercel@latest
-
-          # Standard config for every module; replaces any vercel.json in their repo
-          cat > vercel.json <<'EOF'
-          {
-            "buildCommand": "npm run build",
-            "outputDirectory": "dist",
-            "headers": [
-              {
-                "source": "/(.*)",
-                "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }]
-              },
-              {
-                "source": "/remoteEntry.js",
-                "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-              }
-            ]
-          }
-          EOF
-
-          vercel pull --yes --environment=production
-          vercel build --target=production
-          vercel deploy --prebuilt --target=production

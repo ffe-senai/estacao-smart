@@ -1,19 +1,17 @@
 name: group-modules_ci
 
-# Checks each group module (git submodule in a root folder) and, in production, deploys it.
-# A module without a submodule is skipped; an existing module must pass every check (see gm_module.yaml).
-# Production deploys only run after every existing module passed.
-# Called by ci.yaml on every PR (check only) and by deploy.yaml after a production deploy (check + deploy).
+# Checks each group module (git submodule in a root folder); a module without a submodule is skipped.
+# An existing module must pass every check (see gm_module.yaml).
+# Called by ci.yaml on every PR and by gm_deploy.yaml before the production deploy of the modules.
 on:
   workflow_call:
-    inputs:
-      deploy:
-        type: boolean
-        default: false
     outputs:
       report:
         description: One line per checked module (compatible or not, and why)
         value: ${{ jobs.result.outputs.report }}
+      found:
+        description: JSON list of the module folders that exist
+        value: ${{ jobs.modules.outputs.found }}
 
 permissions:
   contents: read
@@ -101,43 +99,3 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           [ "$FAILED" != true ]
 
-  # Production only: deploy every module that exists, after all checks passed
-  deploy-ihm-siemens:
-    name: deploy (ihm-siemens)
-    needs: [modules, result]
-    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'ihm-siemens')
-    uses: ./.github/workflows/gm_module.yaml
-    with: { folder: ihm-siemens, domain: g2, deploy: true }
-    secrets: inherit
-
-  deploy-cobot-ur:
-    name: deploy (cobot-ur)
-    needs: [modules, result]
-    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'cobot-ur')
-    uses: ./.github/workflows/gm_module.yaml
-    with: { folder: cobot-ur, domain: g3, deploy: true }
-    secrets: inherit
-
-  deploy-rastreabilidade:
-    name: deploy (rastreabilidade)
-    needs: [modules, result]
-    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'rastreabilidade')
-    uses: ./.github/workflows/gm_module.yaml
-    with: { folder: rastreabilidade, domain: g4, deploy: true }
-    secrets: inherit
-
-  deploy-expedicao:
-    name: deploy (expedicao)
-    needs: [modules, result]
-    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'expedicao')
-    uses: ./.github/workflows/gm_module.yaml
-    with: { folder: expedicao, domain: g5, deploy: true }
-    secrets: inherit
-
-  deploy-poc:
-    name: deploy (poc)
-    needs: [modules, result]
-    if: inputs.deploy && contains(fromJSON(needs.modules.outputs.found), 'poc')
-    uses: ./.github/workflows/gm_module.yaml
-    with: { folder: poc, domain: poc, deploy: true }
-    secrets: inherit
