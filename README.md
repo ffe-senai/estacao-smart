@@ -116,7 +116,7 @@ export default createBridgeComponent({ rootComponent: App });
 
 **3. Atenda ao contrato do CI**, verificado a cada PR:
 
-- `package.json` e `package-lock.json` na raiz do módulo.
+- `package.json` e o lockfile (`package-lock.json` ou `pnpm-lock.yaml`) na raiz do módulo.
 - Scripts `check` (lint e tipagem) e `build`.
 - O `build` gera `dist/remoteEntry.js`.
 
@@ -125,6 +125,20 @@ export default createBridgeComponent({ rootComponent: App });
 - **Local:** em `app-shell/.env`, por exemplo `G2_ENTRY="http://localhost:5001/remoteEntry.js"`.
 - **Teste e Desenvolvimento:** em **Settings → Secrets and variables → Actions → Variables**, crie `G2_ENTRY`.
 - **Produção:** automático, a partir do subdomínio do grupo (`https://g2.ffe-senai.com.br/remoteEntry.js`).
+
+> ⚠️ **Somente para Desenvolvimento**<br>
+> Se o grupo publicar o próprio deploy de dev (ex.: Vercel), o `remoteEntry.js` precisa liberar CORS. Crie um `vercel.json` na raiz do módulo:
+>
+> ```json
+> {
+>   "headers": [
+>     { "source": "/(.*)", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }] },
+>     { "source": "/remoteEntry.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+>   ]
+> }
+> ```
+>
+> Em Produção, o CI gera esse arquivo sozinho e substitui qualquer `vercel.json` do módulo.
 
 > 💡 **Dica**<br>
 > O [POC](https://github.com/ffe-senai/poc) é um exemplo de módulo integrado ao App Shell.
@@ -189,9 +203,9 @@ Rode antes de enviar, dentro da pasta `app-shell`. São as mesmas verificações
 
 | Script | Uso |
 |---|---|
-| `npm run lint` | ESLint |
-| `npm run typecheck` | Tipagem TypeScript (`next typegen` + `tsc`) |
-| `npm run build` | Build de produção |
+| `pnpm run lint` | ESLint |
+| `pnpm run typecheck` | Tipagem TypeScript (`tsc`) |
+| `pnpm run build` | Build de produção |
 
 </details>
 

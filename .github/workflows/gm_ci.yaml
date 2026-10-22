@@ -2,8 +2,8 @@ name: group-modules_ci
 
 # Checks each group module (git submodule in a root folder) and, in production, deploys it.
 # A module whose folder doesn't exist (or is empty) is skipped; an existing module must pass every check.
-# Contract per module: package.json and package-lock.json at the root, the scripts check and build,
-# and a build that generates dist/remoteEntry.js.
+# Contract per module: package.json and a lockfile (package-lock.json or pnpm-lock.yaml) at the root,
+# the scripts check and build, and a build that generates dist/remoteEntry.js.
 # Called by ci.yaml on every PR (check only) and by deploy.yaml after a production deploy (check + deploy).
 on:
   workflow_call:
@@ -62,14 +62,20 @@ jobs:
         if: steps.find.outputs.found
         working-directory: ${{ matrix.folder }}
         run: |
+          # Package manager from the lockfile the group committed
+          if   [ -f pnpm-lock.yaml ];    then pm=pnpm install="pnpm install --frozen-lockfile"
+          elif [ -f package-lock.json ]; then pm=npm  install="npm ci"
+          fi
+
           problem=""
           if   [ ! -f package.json ];                   then problem="falta o \`package.json\` na raiz"
-          elif [ ! -f package-lock.json ];              then problem="falta o \`package-lock.json\`"
+          elif [ -z "$pm" ];                            then problem="falta o lockfile (\`package-lock.json\` ou \`pnpm-lock.yaml\`)"
           elif ! jq -e .scripts.check package.json >/dev/null; then problem="falta o script \`check\`"
           elif ! jq -e .scripts.build package.json >/dev/null; then problem="falta o script \`build\`"
-          elif ! npm ci;                                then problem="\`npm ci\` falhou"
-          elif ! npm run check;                         then problem="\`npm run check\` falhou"
-          elif ! npm run build;                         then problem="\`npm run build\` falhou"
+          elif [ "$pm" = pnpm ] && ! npm i -g pnpm;     then problem="não foi possível instalar o pnpm"
+          elif ! $install;                              then problem="\`$install\` falhou"
+          elif ! $pm run check;                         then problem="\`$pm run check\` falhou"
+          elif ! $pm run build;                         then problem="\`$pm run build\` falhou"
           elif [ ! -f dist/remoteEntry.js ];            then problem="o build não gerou \`dist/remoteEntry.js\`"
           fi
 
