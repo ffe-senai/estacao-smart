@@ -121,7 +121,7 @@ export default createBridgeComponent({ rootComponent: App });
 
 **3. Atenda ao contrato do CI**, verificado a cada PR:
 
-- `package.json` e o lockfile (`package-lock.json` ou `pnpm-lock.yaml`) na raiz do módulo.
+- `package.json` e o lockfile na raiz do módulo: npm (`package-lock.json`), pnpm (`pnpm-lock.yaml`), yarn (`yarn.lock`) ou bun (`bun.lock`).
 - Scripts `check` (lint e tipagem) e `build`.
 - O `build` gera `dist/remoteEntry.js`.
 
