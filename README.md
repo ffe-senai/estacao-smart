@@ -18,10 +18,15 @@
 
 | Pasta / arquivo | O que é | Quem altera |
 |---|---|---|
-| `app-shell/` | A aplicação (Next.js). Todo o código fica aqui | Todos |
+| `app-shell/` | A aplicação ([Modern.js](#modernjs)). Todo o código fica aqui | G1 |
+| `poc/` | Submódulo [POC](https://github.com/ffe-senai/poc), módulo de exemplo integrado via [Module Federation](#module-federation) | Time DevOps |
+| `ihm-siemens/` | Submódulo do módulo IHM Siemens ([integração](#próximos-passos---integrar-módulo)) | G2 |
+| `cobot-ur/` | Submódulo do módulo Cobot UR ([integração](#próximos-passos---integrar-módulo)) | G3 |
+| `rastreabilidade/` | Submódulo do módulo Rastreabilidade ([integração](#próximos-passos---integrar-módulo)) | G4 |
+| `expedicao/` | Submódulo do módulo Expedição ([integração](#próximos-passos---integrar-módulo)) | G5 |
 | `.github/` | Workflows de CI/CD e regras do repositório | Time DevOps |
 
-Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `.next/` e `.env*` já são ignorados pelo `.gitignore` e **nunca** devem ser enviados.
+Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `dist/` e `.env*` já são ignorados pelo `.gitignore` e **nunca** devem ser enviados.
 
 ## Primeiros Passos
 
@@ -55,6 +60,93 @@ Para instalar o app-shel e rodar a aplicação, siga o [README do app-shell](app
 | `build/*` | Alterações no processo de compilação |
 | `ci/*` | Configuração da integração contínua |
 | `revert/*` | Desfazer alterações anteriores |
+
+## Próximos Passos - Integrar Módulo
+
+Cada grupo publica seu módulo como um *remote* de [Module Federation](https://module-federation.io). O App Shell carrega o `remoteEntry.js` do grupo e renderiza o módulo na janela dele, com o CSS isolado.
+
+| Grupo | Pasta (submódulo) | Variável | Produção |
+|---|---|---|---|
+| G2 | `ihm-siemens` | [`G2_ENTRY`](https://github.com/ffe-senai/estacao-smart/settings/variables/actions/G2_ENTRY) | `g2.ffe-senai.com.br` |
+| G3 | `cobot-ur` | [`G3_ENTRY`](https://github.com/ffe-senai/estacao-smart/settings/variables/actions/G3_ENTRY) | `g3.ffe-senai.com.br` |
+| G4 | `rastreabilidade` | [`G4_ENTRY`](https://github.com/ffe-senai/estacao-smart/settings/variables/actions/G4_ENTRY) | `g4.ffe-senai.com.br` |
+| G5 | `expedicao` | [`G5_ENTRY`](https://github.com/ffe-senai/estacao-smart/settings/variables/actions/G5_ENTRY) | `g5.ffe-senai.com.br` |
+
+**1. Adicione o repositório do módulo como submódulo**, na raiz, com a pasta do grupo:
+
+```bash
+git submodule add https://github.com/ffe-senai/<repositorio-do-grupo>.git <pasta>
+```
+
+**2. Configure o Module Federation no módulo** (exemplo com Vite):
+
+```bash
+npm i @module-federation/bridge-react
+npm i -D @module-federation/vite
+```
+
+```ts
+// vite.config.ts
+import { federation } from "@module-federation/vite";
+
+export default defineConfig({
+  base: "./",
+  plugins: [
+    react(),
+    federation({
+      name: "smart",
+      filename: "remoteEntry.js",
+      exposes: { ".": "./src/ModuleBridge.tsx" },
+      dts: false,
+    }),
+  ],
+});
+```
+
+```tsx
+// src/ModuleBridge.tsx
+import App from "./App";
+import { createBridgeComponent } from "@module-federation/bridge-react/v19";
+
+export default createBridgeComponent({ rootComponent: App });
+```
+
+| Regra | Por quê |
+|---|---|
+| `name: "smart"` | Nome que o App Shell procura em todos os módulos |
+| `exposes` com `"."` | O App Shell carrega o expose padrão do remote |
+| `bridge-react/v19` | O App Shell usa React 19 |
+| Sem `shared` | Cada módulo roda com o próprio React, isolado pelo bridge |
+| `base: "./"` | Imagens e assets carregam do domínio do módulo |
+
+**3. Atenda ao contrato do CI**, verificado a cada PR:
+
+- `package.json` e o lockfile (`package-lock.json` ou `pnpm-lock.yaml`) na raiz do módulo.
+- Scripts `check` (lint e tipagem) e `build`.
+- O `build` gera `dist/remoteEntry.js`.
+
+**4. Aponte a variável do grupo** para a URL completa do `remoteEntry.js`:
+
+- **Local:** em `app-shell/.env`, por exemplo `G2_ENTRY="http://localhost:5001/remoteEntry.js"`.
+- **Teste e Desenvolvimento:** em [**Settings → Secrets and variables → Actions → Variables**](https://github.com/ffe-senai/estacao-smart/settings/variables/actions), crie a variável do grupo (os links estão na tabela acima).
+- **Produção:** automático, a partir do subdomínio do grupo (`https://g2.ffe-senai.com.br/remoteEntry.js`).
+
+> ⚠️ **Somente para Desenvolvimento**<br>
+> Se o grupo publicar o próprio deploy de dev (ex.: [Vercel](#vercel)), o `remoteEntry.js` precisa liberar CORS. Crie um `vercel.json` na raiz do módulo:
+>
+> ```json
+> {
+>   "headers": [
+>     { "source": "/(.*)", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }] },
+>     { "source": "/remoteEntry.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+>   ]
+> }
+> ```
+>
+> Em Produção, o CI gera esse arquivo sozinho e substitui qualquer `vercel.json` do módulo.
+
+> 💡 **Dica**<br>
+> O [POC (Proof of Concept)](https://github.com/ffe-senai/poc) é um exemplo de módulo integrado ao App Shell.
 
 ## Fluxo de Trabalho
 
@@ -116,9 +208,9 @@ Rode antes de enviar, dentro da pasta `app-shell`. São as mesmas verificações
 
 | Script | Uso |
 |---|---|
-| `npm run lint` | ESLint |
-| `npm run typecheck` | Tipagem TypeScript (`next typegen` + `tsc`) |
-| `npm run build` | Build de produção |
+| `pnpm run lint` | ESLint |
+| `pnpm run typecheck` | Tipagem TypeScript (`tsc`) |
+| `pnpm run build` | Build de produção |
 
 </details>
 
@@ -275,3 +367,10 @@ Por fim, o sistema estará disponível a todos em [ffe-senai.com.br](https://ffe
 | `0.x.x` → `1.0.0` | Primeira versão estável |
 
 </details>
+
+## Referências:
+#### <a id="vercel" href="https://vercel.com/">Vercel: Agentic Infrastructure</a>
+
+#### <a id="modernjs" href="https://modernjs.dev/">Modern.js - A Progressive React Framework</a>
+
+#### <a id="module-federation" href="https://module-federation.io/">Module Federation - Micro-frontend architectural pattern</a>

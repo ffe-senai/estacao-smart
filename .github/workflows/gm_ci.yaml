@@ -1,0 +1,189 @@
+name: group-modules_ci
+
+# Checks each group module (git submodule in a root folder) and, in production, deploys it.
+# A module whose folder doesn't exist (or is empty) is skipped; an existing module must pass every check.
+# Contract per module: package.json and a lockfile (package-lock.json or pnpm-lock.yaml) at the root,
+# the scripts check and build, and a build that generates dist/remoteEntry.js.
+# Called by ci.yaml on every PR (check only) and by deploy.yaml after a production deploy (check + deploy).
+on:
+  workflow_call:
+    inputs:
+      deploy:
+        type: boolean
+        default: false
+    outputs:
+      report:
+        description: One line per checked module (compatible or not, and why)
+        value: ${{ jobs.result.outputs.report }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false        # one module failing doesn't cancel the others
+      matrix:
+        include: &modules     # module folder -> production subdomain
+          - { folder: ihm-siemens,     domain: g2 }
+          - { folder: cobot-ur,        domain: g3 }
+          - { folder: rastreabilidade, domain: g4 }
+          - { folder: expedicao,       domain: g5 }
+          - { folder: poc,             domain: poc }
+    name: check (${{ matrix.folder }})
+    defaults:
+      run:
+        shell: bash
+    env:
+      FOLDER: ${{ matrix.folder }}
+      GROUP: ${{ matrix.domain }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.REMOTES_TOKEN || github.token }}   # REMOTES_TOKEN only needed if group repos are private
+
+      - name: Find module
+        id: find
+        run: |
+          if [ -n "$(ls -A "$FOLDER" 2>/dev/null)" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Module folder '$FOLDER' not found, skipping"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.find.outputs.found
+        with:
+          node-version: 24
+
+      - name: Validate module
+        if: steps.find.outputs.found
+        working-directory: ${{ matrix.folder }}
+        run: |
+          # Package manager from the lockfile the group committed
+          if   [ -f pnpm-lock.yaml ];    then pm=pnpm install="pnpm install --frozen-lockfile"
+          elif [ -f package-lock.json ]; then pm=npm  install="npm ci"
+          fi
+
+          problem=""
+          if   [ ! -f package.json ];                   then problem="falta o \`package.json\` na raiz"
+          elif [ -z "$pm" ];                            then problem="falta o lockfile (\`package-lock.json\` ou \`pnpm-lock.yaml\`)"
+          elif ! jq -e .scripts.check package.json >/dev/null; then problem="falta o script \`check\`"
+          elif ! jq -e .scripts.build package.json >/dev/null; then problem="falta o script \`build\`"
+          elif [ "$pm" = pnpm ] && ! npm i -g pnpm;     then problem="não foi possível instalar o pnpm"
+          elif ! $install;                              then problem="\`$install\` falhou"
+          elif ! $pm run check;                         then problem="\`$pm run check\` falhou"
+          elif ! $pm run build;                         then problem="\`$pm run build\` falhou"
+          elif [ ! -f dist/remoteEntry.js ];            then problem="o build não gerou \`dist/remoteEntry.js\`"
+          fi
+
+          if [ -n "$problem" ]; then
+            echo "❌ Módulo ${GROUP^^} \`$FOLDER\` incompatível: $problem" > "$RUNNER_TEMP/result.md"
+            exit 1
+          fi
+          echo "✅ Módulo ${GROUP^^} \`$FOLDER\` compatível" > "$RUNNER_TEMP/result.md"
+
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.find.outputs.found
+        with:
+          name: module-${{ matrix.folder }}
+          path: ${{ runner.temp }}/result.md
+          if-no-files-found: ignore
+
+  # Joins the result of every module into one report (and fails if any module failed)
+  result:
+    needs: check
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    outputs:
+      report: ${{ steps.collect.outputs.report }}
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true   # no artifacts when every module was skipped
+        with:
+          pattern: module-*
+          path: results
+
+      - name: Collect results
+        id: collect
+        env:
+          CHECK: ${{ needs.check.result }}
+        run: |
+          {
+            echo "report<<EOF"
+            cat results/*/result.md 2>/dev/null || true
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          [ "$CHECK" != failure ]
+
+  # Production only: deploy every module that exists, after all checks passed
+  deploy:
+    needs: check
+    if: inputs.deploy
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: *modules
+    name: deploy (${{ matrix.folder }})
+    environment:
+      name: Produção
+      url: https://${{ matrix.domain }}.ffe-senai.com.br
+    concurrency: gm-ci-${{ matrix.folder }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      FOLDER: ${{ matrix.folder }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ fromJSON(secrets.GM_PROJECTS)[matrix.folder] }}   # Produção secret: {"ihm-siemens":"prj_...","cobot-ur":"prj_...",...}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.REMOTES_TOKEN || github.token }}
+
+      - name: Find module
+        id: find
+        run: |
+          if [ -n "$(ls -A "$FOLDER" 2>/dev/null)" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Module folder '$FOLDER' not found, skipping"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.find.outputs.found
+        with:
+          node-version: 24
+
+      - name: Deploy
+        if: steps.find.outputs.found
+        working-directory: ${{ matrix.folder }}
+        run: |
+          npm i -g vercel@latest
+
+          # Standard config for every module; replaces any vercel.json in their repo
+          cat > vercel.json <<'EOF'
+          {
+            "buildCommand": "npm run build",
+            "outputDirectory": "dist",
+            "headers": [
+              {
+                "source": "/(.*)",
+                "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }]
+              },
+              {
+                "source": "/remoteEntry.js",
+                "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+              }
+            ]
+          }
+          EOF
+
+          vercel pull --yes --environment=production
+          vercel build --target=production
+          vercel deploy --prebuilt --target=production

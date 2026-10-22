@@ -1,5 +1,8 @@
 {
   "git": {
     "deploymentEnabled": false
-  }
+  },
+  "framework": null,
+  "buildCommand": "MODERNJS_DEPLOY=vercel modern deploy && cp -r dist/public/. .vercel/output/static/",
+  "outputDirectory": ".vercel/output"
 }

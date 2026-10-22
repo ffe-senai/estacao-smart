@@ -1,0 +1,50 @@
+name: release-status
+
+# Shows the deploy status at the top of the release notes:
+# "in progress" with a link to the run when deploy starts, then the result when it finishes.
+on:
+  workflow_run:
+    workflows: [deploy]
+    types: [requested, completed]
+
+permissions:
+  contents: write   # edit the release notes
+
+jobs:
+  status:
+    if: github.event.workflow_run.event == 'release'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.event.workflow_run.head_branch }}        # for release runs, this is the tag
+      ACTION: ${{ github.event.action }}
+      CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
+    steps:
+      - name: Update release notes
+        run: |
+          release=$(gh release view "$TAG" --json body,isPrerelease,targetCommitish)
+          target=$(jq -r .targetCommitish <<< "$release")
+          prerelease=$(jq -r .isPrerelease <<< "$release")
+
+          case "$prerelease:$target" in
+            true:dev)   url="https://dev.ffe-senai.com.br" ;;
+            false:prod) url="https://ffe-senai.com.br" ;;
+            *)          url="" ;;
+          esac
+
+          if [ -z "$url" ]; then
+            line="⚠️ Nenhum deploy: pré-release deve ter target \`dev\` e release comum, target \`prod\` · [Ver execução]($RUN_URL)"
+          elif [ "$ACTION" = requested ]; then
+            line="⏳ Deploy em andamento · [Acompanhar execução]($RUN_URL)"
+          elif [ "$CONCLUSION" = success ]; then
+            line="✅ Deploy concluído: $url · [Ver execução]($RUN_URL)"
+          else
+            line="❌ Deploy falhou · [Ver execução]($RUN_URL)"
+          fi
+
+          # Replace the previous status block (if any) and put the new one at the top
+          jq -r .body <<< "$release" | sed '/<!-- deploy-status -->/,/<!-- \/deploy-status -->/d' | sed '/./,$!d' > body.md
+          printf '<!-- deploy-status -->\n%s\n<!-- /deploy-status -->\n\n' "$line" | cat - body.md > notes.md
+          gh release edit "$TAG" --notes-file notes.md
