@@ -141,7 +141,7 @@ export default createBridgeComponent({ rootComponent: App });
 > Em Produção, o CI gera esse arquivo sozinho e substitui qualquer `vercel.json` do módulo.
 
 > 💡 **Dica**<br>
-> O [POC](https://github.com/ffe-senai/poc) é um exemplo de módulo integrado ao App Shell.
+> O [POC (Proof of Concept)](https://github.com/ffe-senai/poc) é um exemplo de módulo integrado ao App Shell.
 
 ## Fluxo de Trabalho
 
