@@ -45,8 +45,16 @@ jobs:
           node-version: 24
 
       - name: Deploy
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: 0   # yarn through corepack without asking
         run: |
           npm i -g vercel@latest
+
+          # vercel build installs with the module's package manager (npm is already on the runner)
+          if   [ -f pnpm-lock.yaml ];               then npm i -g pnpm
+          elif [ -f yarn.lock ];                    then corepack enable yarn
+          elif [ -f bun.lock ] || [ -f bun.lockb ]; then npm i -g bun
+          fi
 
           # Standard config for every module; replaces any vercel.json in their repo
           cat > vercel.json <<'EOF'
