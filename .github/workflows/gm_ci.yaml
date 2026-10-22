@@ -94,7 +94,7 @@ jobs:
         run: |
           {
             echo "report<<EOF"
-            cat results/*/result.md 2>/dev/null || true
+            find results -name result.md -exec cat {} + 2>/dev/null || true   # one artifact lands in results/, several in results/<name>/
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
           [ "$FAILED" != true ]
