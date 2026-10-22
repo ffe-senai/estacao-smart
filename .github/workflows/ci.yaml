@@ -99,13 +99,21 @@ jobs:
       CHECKS: ${{ needs.checks.result }}
       TESTE: ${{ needs.teste.result }}
       URL: ${{ needs.teste.outputs.url }}
-      MODULES: ${{ needs.modules.outputs.report }}
       SHA: ${{ github.event.pull_request.head.sha }}
       PR: ${{ github.event.pull_request.number }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
+      - uses: actions/download-artifact@v8
+        continue-on-error: true   # no artifacts when there's no module
+        with:
+          pattern: module-*
+          path: results
+
       - name: Comment results on the PR
         run: |
+          # One report line per module (a lone artifact lands in results/, several in results/<name>/)
+          MODULES=$(find results -name result.md -exec cat {} + 2>/dev/null || true)
+
           body=""
           line() { body+="- $1"$'\n'; }
 

@@ -1,31 +1,49 @@
 name: group-modules_ci
 
-# Checks every group module (git submodule in a root folder) in a single job.
+# Checks each group module (git submodule in a root folder): one job per existing module,
+# absent modules don't show up. Each job uploads a "module-<folder>" artifact with its report line.
 # Contract per module: package.json and a lockfile (package-lock.json or pnpm-lock.yaml) at the root,
 # the scripts check and build, and a build that generates dist/remoteEntry.js.
 # Called by ci.yaml on every PR and by gm_deploy.yaml before the production deploy of the modules.
 on:
   workflow_call:
     outputs:
-      report:
-        description: One line per checked module (compatible or not, and why)
-        value: ${{ jobs.check.outputs.report }}
       found:
         description: JSON list of the module folders that exist
-        value: ${{ jobs.check.outputs.found }}
+        value: ${{ jobs.list.outputs.found }}
 
 permissions:
   contents: read
 
 jobs:
-  check:
+  list:
     runs-on: ubuntu-latest
     outputs:
-      report: ${{ steps.validate.outputs.report }}
-      found: ${{ steps.validate.outputs.found }}
+      found: ${{ steps.list.outputs.found }}
+    steps:
+      - uses: actions/checkout@v7   # without submodules: only reads .gitmodules
+
+      - name: List modules
+        id: list
+        run: |
+          paths=$(git config -f .gitmodules --get-regexp '\.path$' 2>/dev/null | awk '{print $2}' || true)
+          echo "found=$(printf '%s\n' $paths | jq -Rsc 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+          echo "Modules: ${paths:-none}"
+
+  check:
+    needs: list
+    if: needs.list.outputs.found != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false        # one module failing doesn't cancel the others
+      matrix:
+        module: ${{ fromJSON(needs.list.outputs.found) }}
+    name: check (${{ matrix.module }})
     defaults:
       run:
         shell: bash
+    env:
+      MODULE: ${{ matrix.module }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,52 +54,39 @@ jobs:
         with:
           node-version: 24
 
-      - name: Validate modules
-        id: validate
+      - name: Validate module
+        working-directory: ${{ matrix.module }}
         run: |
           # Module folder -> group shown in the report (production subdomain)
           declare -A GROUP=([ihm-siemens]=g2 [cobot-ur]=g3 [rastreabilidade]=g4 [expedicao]=g5 [poc]=poc)
+          group=${GROUP[$MODULE]:-$MODULE}
 
-          # Prints the reason a module is incompatible (nothing when it passes); command output goes to the log
-          problem_of() (
-            cd "$1" || { echo "pasta não encontrada"; return; }
-            if   [ -f pnpm-lock.yaml ];    then pm=pnpm install="pnpm install --frozen-lockfile"
-            elif [ -f package-lock.json ]; then pm=npm  install="npm ci"
-            fi
+          # Package manager from the lockfile the group committed
+          if   [ -f pnpm-lock.yaml ];    then pm=pnpm install="pnpm install --frozen-lockfile"
+          elif [ -f package-lock.json ]; then pm=npm  install="npm ci"
+          fi
 
-            if   [ ! -f package.json ];                   then echo "falta o \`package.json\` na raiz"
-            elif [ -z "$pm" ];                            then echo "falta o lockfile (\`package-lock.json\` ou \`pnpm-lock.yaml\`)"
-            elif ! jq -e .scripts.check package.json >/dev/null; then echo "falta o script \`check\`"
-            elif ! jq -e .scripts.build package.json >/dev/null; then echo "falta o script \`build\`"
-            elif [ "$pm" = pnpm ] && ! { command -v pnpm || npm i -g pnpm; } >&2; then echo "não foi possível instalar o pnpm"
-            elif ! $install >&2;                          then echo "\`$install\` falhou"
-            elif ! $pm run check >&2;                     then echo "\`$pm run check\` falhou"
-            elif ! $pm run build >&2;                     then echo "\`$pm run build\` falhou"
-            elif [ ! -f dist/remoteEntry.js ];            then echo "o build não gerou \`dist/remoteEntry.js\`"
-            fi
-          )
+          problem=""
+          if   [ ! -f package.json ];                   then problem="falta o \`package.json\` na raiz"
+          elif [ -z "$pm" ];                            then problem="falta o lockfile (\`package-lock.json\` ou \`pnpm-lock.yaml\`)"
+          elif ! jq -e .scripts.check package.json >/dev/null; then problem="falta o script \`check\`"
+          elif ! jq -e .scripts.build package.json >/dev/null; then problem="falta o script \`build\`"
+          elif [ "$pm" = pnpm ] && ! npm i -g pnpm;     then problem="não foi possível instalar o pnpm"
+          elif ! $install;                              then problem="\`$install\` falhou"
+          elif ! $pm run check;                         then problem="\`$pm run check\` falhou"
+          elif ! $pm run build;                         then problem="\`$pm run build\` falhou"
+          elif [ ! -f dist/remoteEntry.js ];            then problem="o build não gerou \`dist/remoteEntry.js\`"
+          fi
 
-          modules=$(git config -f .gitmodules --get-regexp '\.path$' 2>/dev/null | awk '{print $2}' || true)
-          report="" failed=""
-          for module in $modules; do
-            group=${GROUP[$module]:-$module}
-            echo "::group::Módulo ${group^^} ($module)"
-            problem=$(problem_of "$module")
-            echo "::endgroup::"
+          if [ -n "$problem" ]; then
+            echo "❌ Módulo ${group^^} \`$MODULE\` incompatível: $problem" > "$RUNNER_TEMP/result.md"
+            exit 1
+          fi
+          echo "✅ Módulo ${group^^} \`$MODULE\` compatível" > "$RUNNER_TEMP/result.md"
 
-            if [ -n "$problem" ]; then
-              report+="❌ Módulo ${group^^} \`$module\` incompatível: $problem"$'\n'
-              failed=true
-            else
-              report+="✅ Módulo ${group^^} \`$module\` compatível"$'\n'
-            fi
-          done
-
-          printf '%s' "${report:-Nenhum módulo encontrado}"$'\n'
-          {
-            echo "found=$(printf '%s\n' $modules | jq -Rsc 'split("\n") | map(select(length > 0))')"
-            echo "report<<EOF"
-            printf '%s' "$report"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-          [ -z "$failed" ]
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: module-${{ matrix.module }}
+          path: ${{ runner.temp }}/result.md
+          if-no-files-found: ignore
