@@ -1,0 +1,147 @@
+name: cd
+
+# Builds and deploys the app shell to Vercel. The target comes from the triggering event:
+# PR into dev -> Teste (preview subdomain) | pre-release or run on dev -> Desenvolvimento |
+# release or run on prod -> Produção. Called by ci.yaml (Teste) and deploy.yaml (dev and prod).
+on:
+  workflow_call:
+    outputs:
+      url:
+        value: ${{ jobs.deploy.outputs.url }}
+      target:
+        value: ${{ jobs.deploy.outputs.target }}
+
+permissions:
+  contents: read
+
+env:
+  DOMAIN: ffe-senai.com.br
+  RESERVED_SUBDOMAINS: dev www prod g2 g3 g4 g5 poc
+
+jobs:
+  deploy:
+    # PR into dev -> Teste | pre-release or run on dev -> Desenvolvimento | release or run on prod -> Produção
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' && (github.ref_name == 'dev' || github.ref_name == 'prod')) ||
+      (github.event_name == 'release' && (
+        (github.event.release.target_commitish == 'dev' && github.event.release.prerelease) ||
+        (github.event.release.target_commitish == 'prod' && !github.event.release.prerelease)))
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.preview.outputs.url || steps.deploy.outputs.url }}
+      target: ${{ steps.target.outputs.target }}
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'Teste' || ((github.event.release.target_commitish || github.ref_name) == 'prod' && 'Produção' || 'Desenvolvimento') }}
+      url: ${{ steps.preview.outputs.url || steps.target.outputs.url || steps.deploy.outputs.url }}
+    concurrency: deploy-${{ github.event.pull_request.number || github.event.release.target_commitish || github.ref_name }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: app-shell
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Resolve target
+        id: target
+        working-directory: .
+        env:
+          BRANCH: ${{ github.event.release.target_commitish || github.ref_name }}
+        run: |
+          case "$GITHUB_EVENT_NAME:$BRANCH" in
+            pull_request:*) target=teste url= ;;
+            *:dev)          target=dev   url=https://dev.$DOMAIN ;;
+            *:prod)         target=prod  url=https://$DOMAIN ;;
+          esac
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "TARGET=$target" >> "$GITHUB_ENV"
+          echo "VERCEL_ENV=$([ "$target" = prod ] && echo production || echo preview)" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: app-shell/package.json   # version from "packageManager"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: app-shell/pnpm-lock.yaml
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Verify Vercel auth
+        run: vercel whoami
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment="$VERCEL_ENV"
+
+      - name: Build
+        env:
+          G2_ENTRY: ${{ vars.G2_ENTRY }}
+          G3_ENTRY: ${{ vars.G3_ENTRY }}
+          G4_ENTRY: ${{ vars.G4_ENTRY }}
+          G5_ENTRY: ${{ vars.G5_ENTRY }}
+          POC_ENTRY: ${{ vars.POC_ENTRY }}
+        run: |
+          if [ "$TARGET" = prod ]; then   # production always loads the groups from their fixed subdomains
+            for group in G2 G3 G4 G5 POC; do
+              export "${group}_ENTRY=https://${group,,}.$DOMAIN/remoteEntry.js"
+            done
+          fi
+          vercel build --target="$VERCEL_ENV"
+
+      - name: Deploy
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --target="$VERCEL_ENV")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "DEPLOY_URL=$url" >> "$GITHUB_ENV"
+
+      - name: Point deploy to dev.domain
+        if: env.TARGET == 'dev'
+        run: vercel alias set "$DEPLOY_URL" "dev.$DOMAIN" --team="$VERCEL_ORG_ID"
+
+      - name: Point deploy to preview domain
+        id: preview
+        if: env.TARGET == 'teste'
+        continue-on-error: true
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          # feat/My_Branch! -> my-branch (lowercase, only a-z 0-9 -, max 20 chars)
+          name=$(printf '%s' "${BRANCH##*/}" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | cut -c1-20 | sed 's/^-*//; s/-*$//')
+
+          if [ -z "$name" ] || [[ " $RESERVED_SUBDOMAINS " == *" $name "* ]]; then
+            echo "Branch '$BRANCH' has no usable preview name, skipping"
+            exit 0
+          fi
+
+          vercel alias set "$DEPLOY_URL" "$name.$DOMAIN" --team="$VERCEL_ORG_ID"
+          echo "url=https://$name.$DOMAIN" >> "$GITHUB_OUTPUT"
+
+      - name: Clean up previews
+        if: steps.preview.outputs.url || github.event.release.prerelease
+        continue-on-error: true
+        env:
+          KEEP: ${{ env.TARGET == 'teste' && '5' || '0' }}   # a pre-release clears every preview
+        run: |
+          to_remove=$(vercel api "/v4/aliases?projectId=$VERCEL_PROJECT_ID&limit=100" --team="$VERCEL_ORG_ID" --raw \
+            | jq -r --arg suffix ".$DOMAIN" --arg reserved "$RESERVED_SUBDOMAINS" --argjson keep "$KEEP" '
+                [ .aliases[]
+                  | select(.alias | endswith($suffix))
+                  | (.alias | rtrimstr($suffix)) as $name
+                  | select(($name | contains(".")) or ($reserved | split(" ") | index($name)) | not)
+                ]
+                | sort_by(.updatedAt // .createdAt) | reverse
+                | .[$keep:][].alias')
+
+          for alias in $to_remove; do
+            vercel alias rm "$alias" --yes --team="$VERCEL_ORG_ID"
+          done
+          echo "Removed: ${to_remove:-nothing} (keeping $KEEP)"

@@ -1,153 +1,23 @@
 name: deploy
 
+# Pre-release on dev -> Desenvolvimento | release on prod -> Produção (also by hand: run on dev or prod).
+# In production, the group modules are checked and deployed after the app shell.
 on:
-  workflow_call:          # PR into dev (called by ci.yaml after checks) -> Teste
-    outputs:
-      url:
-        value: ${{ jobs.deploy.outputs.url }}
   release:
-    types: [published]    # pre-release on dev -> Desenvolvimento | release on prod -> Produção
-  workflow_dispatch:      # run on dev -> Desenvolvimento | run on prod -> Produção
+    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-env:
-  DOMAIN: ffe-senai.com.br
-  RESERVED_SUBDOMAINS: dev www prod g2 g3 g4 g5 poc
-
 jobs:
-  resolve:
-    runs-on: ubuntu-latest
-    outputs:
-      target: ${{ steps.resolve.outputs.target }}
-      environment: ${{ steps.resolve.outputs.environment }}
-      url: ${{ steps.resolve.outputs.url }}
-    steps:
-      - id: resolve
-        env:
-          EVENT: ${{ github.event_name }}
-          BRANCH: ${{ github.event.release.target_commitish || github.ref_name }}
-          PRERELEASE: ${{ github.event.release.prerelease }}
-        run: |
-          case "$EVENT:$BRANCH:$PRERELEASE" in
-            pull_request:*)                               target=teste environment=Teste           url= ;;
-            workflow_dispatch:dev:*  | release:dev:true)   target=dev   environment=Desenvolvimento url=https://dev.$DOMAIN ;;
-            workflow_dispatch:prod:* | release:prod:false) target=prod  environment=Produção        url=https://$DOMAIN ;;
-            *) echo "Nothing to deploy for $EVENT on '$BRANCH'"; exit 0 ;;
-          esac
-          printf 'target=%s\nenvironment=%s\nurl=%s\n' "$target" "$environment" "$url" >> "$GITHUB_OUTPUT"
-
-  deploy:
-    needs: resolve
-    if: needs.resolve.outputs.target != ''
-    runs-on: ubuntu-latest
-    outputs:
-      url: ${{ steps.preview.outputs.url || steps.deploy.outputs.url }}
-    environment:
-      name: ${{ needs.resolve.outputs.environment }}
-      url: ${{ steps.preview.outputs.url || needs.resolve.outputs.url || steps.deploy.outputs.url }}
-    concurrency: deploy-${{ github.event.pull_request.number || needs.resolve.outputs.target }}
-    defaults:
-      run:
-        shell: bash
-        working-directory: app-shell
-    env:
-      TARGET: ${{ needs.resolve.outputs.target }}
-      VERCEL_ENV: ${{ needs.resolve.outputs.target == 'prod' && 'production' || 'preview' }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6
-        with:
-          package_json_file: app-shell/package.json   # version from "packageManager"
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: app-shell/pnpm-lock.yaml
-
-      - name: Install Vercel CLI
-        run: npm i -g vercel@latest
-
-      - name: Verify Vercel auth
-        run: vercel whoami
-
-      - name: Pull Vercel environment
-        run: vercel pull --yes --environment="$VERCEL_ENV"
-
-      - name: Build
-        env:
-          G2_ENTRY: ${{ vars.G2_ENTRY }}
-          G3_ENTRY: ${{ vars.G3_ENTRY }}
-          G4_ENTRY: ${{ vars.G4_ENTRY }}
-          G5_ENTRY: ${{ vars.G5_ENTRY }}
-          POC_ENTRY: ${{ vars.POC_ENTRY }}
-        run: |
-          if [ "$TARGET" = prod ]; then   # production always loads the groups from their fixed subdomains
-            for group in G2 G3 G4 G5 POC; do
-              export "${group}_ENTRY=https://${group,,}.$DOMAIN/remoteEntry.js"
-            done
-          fi
-          vercel build --target="$VERCEL_ENV"
-
-      - name: Deploy
-        id: deploy
-        run: |
-          url=$(vercel deploy --prebuilt --target="$VERCEL_ENV")
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "DEPLOY_URL=$url" >> "$GITHUB_ENV"
-
-      - name: Point deploy to dev.domain
-        if: env.TARGET == 'dev'
-        run: vercel alias set "$DEPLOY_URL" "dev.$DOMAIN" --team="$VERCEL_ORG_ID"
-
-      - name: Point deploy to preview domain
-        id: preview
-        if: env.TARGET == 'teste'
-        continue-on-error: true
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          # feat/My_Branch! -> my-branch (lowercase, only a-z 0-9 -, max 20 chars)
-          name=$(printf '%s' "${BRANCH##*/}" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | cut -c1-20 | sed 's/^-*//; s/-*$//')
-
-          if [ -z "$name" ] || [[ " $RESERVED_SUBDOMAINS " == *" $name "* ]]; then
-            echo "Branch '$BRANCH' has no usable preview name, skipping"
-            exit 0
-          fi
-
-          vercel alias set "$DEPLOY_URL" "$name.$DOMAIN" --team="$VERCEL_ORG_ID"
-          echo "url=https://$name.$DOMAIN" >> "$GITHUB_OUTPUT"
-
-      - name: Clean up previews
-        if: steps.preview.outputs.url || github.event.release.prerelease
-        continue-on-error: true
-        env:
-          KEEP: ${{ env.TARGET == 'teste' && '5' || '0' }}   # a pre-release clears every preview
-        run: |
-          to_remove=$(vercel api "/v4/aliases?projectId=$VERCEL_PROJECT_ID&limit=100" --team="$VERCEL_ORG_ID" --raw \
-            | jq -r --arg suffix ".$DOMAIN" --arg reserved "$RESERVED_SUBDOMAINS" --argjson keep "$KEEP" '
-                [ .aliases[]
-                  | select(.alias | endswith($suffix))
-                  | (.alias | rtrimstr($suffix)) as $name
-                  | select(($name | contains(".")) or ($reserved | split(" ") | index($name)) | not)
-                ]
-                | sort_by(.updatedAt // .createdAt) | reverse
-                | .[$keep:][].alias')
-
-          for alias in $to_remove; do
-            vercel alias rm "$alias" --yes --team="$VERCEL_ORG_ID"
-          done
-          echo "Removed: ${to_remove:-nothing} (keeping $KEEP)"
+  shell:
+    uses: ./.github/workflows/cd.yaml
+    secrets: inherit
 
   # Production only: check and deploy every group's remote (submodules at the repo root)
   remotes:
-    needs: [resolve, deploy]
-    if: needs.resolve.outputs.target == 'prod'
+    needs: shell
+    if: needs.shell.outputs.target == 'prod'
     uses: ./.github/workflows/gm_deploy.yaml
     secrets: inherit
