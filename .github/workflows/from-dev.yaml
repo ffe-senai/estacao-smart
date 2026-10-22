@@ -1,0 +1,38 @@
+name: from-dev
+
+# PR into prod: must come from dev, and dev's commit must have a beta pre-release
+# (required by the prod ruleset as the "from-dev" check).
+on:
+  pull_request:
+    branches: [prod]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: from-dev-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  from-dev:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Only dev can merge into prod
+        if: github.head_ref != 'dev'
+        run: |
+          echo "PRs into prod must come from dev, not '$GITHUB_HEAD_REF'"
+          exit 1
+
+      - name: Head must have a beta pre-release
+        run: |
+          betas=$(gh api "repos/$GITHUB_REPOSITORY/tags" --paginate \
+            --jq '.[] | select(.commit.sha == env.HEAD_SHA) | .name | select(contains("-beta."))')
+
+          if [ -z "$betas" ]; then
+            echo "Publish a pre-release (x.y.z-beta.N) on dev's latest commit, then re-run this job"
+            exit 1
+          fi
+          echo "Pre-release found: $betas"

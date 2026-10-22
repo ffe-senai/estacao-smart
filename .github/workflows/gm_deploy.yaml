@@ -1,0 +1,71 @@
+name: group-modules_deploy
+
+# Production only: checks every group module and, once all of them pass, deploys each one
+# to its Vercel project (one job per existing module; absent modules don't show up).
+# Called by deploy.yaml after the production deploy of the app shell.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    uses: ./.github/workflows/gm_ci.yaml
+    secrets: inherit
+
+  deploy:
+    needs: checks
+    if: needs.checks.outputs.found != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        folder: ${{ fromJSON(needs.checks.outputs.found) }}
+    name: deploy (${{ matrix.folder }})
+    environment:
+      name: Produção
+    concurrency: gm-deploy-${{ matrix.folder }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.folder }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ fromJSON(secrets.GM_PROJECTS)[matrix.folder] }}   # Produção secret: {"ihm-siemens":"prj_...","cobot-ur":"prj_...",...}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+          token: ${{ secrets.REMOTES_TOKEN || github.token }}   # REMOTES_TOKEN only needed if group repos are private
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Deploy
+        run: |
+          npm i -g vercel@latest
+
+          # Standard config for every module; replaces any vercel.json in their repo
+          cat > vercel.json <<'EOF'
+          {
+            "buildCommand": "npm run build",
+            "outputDirectory": "dist",
+            "headers": [
+              {
+                "source": "/(.*)",
+                "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }]
+              },
+              {
+                "source": "/remoteEntry.js",
+                "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+              }
+            ]
+          }
+          EOF
+
+          vercel pull --yes --environment=production
+          vercel build --target=production
+          vercel deploy --prebuilt --target=production
