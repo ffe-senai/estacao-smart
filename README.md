@@ -62,10 +62,10 @@ Cada grupo publica seu módulo como um *remote* de [Module Federation](https://m
 
 | Grupo | Pasta (submódulo) | Variável | Produção |
 |---|---|---|---|
-| G2 | `ihm-siemens` | `G2_ENTRY` | `g2.ffe-senai.com.br` |
-| G3 | `cobot-ur` | `G3_ENTRY` | `g3.ffe-senai.com.br` |
-| G4 | `rastreabilidade` | `G4_ENTRY` | `g4.ffe-senai.com.br` |
-| G5 | `expedicao` | `G5_ENTRY` | `g5.ffe-senai.com.br` |
+| G2 | `ihm-siemens` | [`G2_ENTRY`](https://github.com/ffe-senai/estacao-smart/settings/variables/actions/G2_ENTRY) | `g2.ffe-senai.com.br` |
+| G3 | `cobot-ur` | [`G3_ENTRY`](https://github.com/ffe-senai/estacao-smart/settings/variables/actions/G3_ENTRY) | `g3.ffe-senai.com.br` |
+| G4 | `rastreabilidade` | [`G4_ENTRY`](https://github.com/ffe-senai/estacao-smart/settings/variables/actions/G4_ENTRY) | `g4.ffe-senai.com.br` |
+| G5 | `expedicao` | [`G5_ENTRY`](https://github.com/ffe-senai/estacao-smart/settings/variables/actions/G5_ENTRY) | `g5.ffe-senai.com.br` |
 
 **1. Adicione o repositório do módulo como submódulo**, na raiz, com a pasta do grupo:
 
@@ -123,7 +123,7 @@ export default createBridgeComponent({ rootComponent: App });
 **4. Aponte a variável do grupo** para a URL completa do `remoteEntry.js`:
 
 - **Local:** em `app-shell/.env`, por exemplo `G2_ENTRY="http://localhost:5001/remoteEntry.js"`.
-- **Teste e Desenvolvimento:** em [**Settings → Secrets and variables → Actions → Variables**](https://github.com/ffe-senai/estacao-smart/settings/variables/actions), crie `G2_ENTRY`.
+- **Teste e Desenvolvimento:** em [**Settings → Secrets and variables → Actions → Variables**](https://github.com/ffe-senai/estacao-smart/settings/variables/actions), crie a variável do grupo (os links estão na tabela acima).
 - **Produção:** automático, a partir do subdomínio do grupo (`https://g2.ffe-senai.com.br/remoteEntry.js`).
 
 > ⚠️ **Somente para Desenvolvimento**<br>
