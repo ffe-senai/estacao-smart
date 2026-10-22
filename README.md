@@ -18,10 +18,11 @@
 
 | Pasta / arquivo | O que é | Quem altera |
 |---|---|---|
-| `app-shell/` | A aplicação (Next.js). Todo o código fica aqui | Todos |
+| `app-shell/` | A aplicação ([Modern.js](#modernjs)). Todo o código fica aqui | Todos |
+| `poc/` | Submódulo do [POC](https://github.com/ffe-senai/poc), módulo de exemplo integrado via [Module Federation](#module-federation) | Time DevOps |
 | `.github/` | Workflows de CI/CD e regras do repositório | Time DevOps |
 
-Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `.next/` e `.env*` já são ignorados pelo `.gitignore` e **nunca** devem ser enviados.
+Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `dist/` e `.env*` já são ignorados pelo `.gitignore` e **nunca** devem ser enviados.
 
 ## Primeiros Passos
 
@@ -127,7 +128,7 @@ export default createBridgeComponent({ rootComponent: App });
 - **Produção:** automático, a partir do subdomínio do grupo (`https://g2.ffe-senai.com.br/remoteEntry.js`).
 
 > ⚠️ **Somente para Desenvolvimento**<br>
-> Se o grupo publicar o próprio deploy de dev (ex.: Vercel), o `remoteEntry.js` precisa liberar CORS. Crie um `vercel.json` na raiz do módulo:
+> Se o grupo publicar o próprio deploy de dev (ex.: [Vercel](#vercel)), o `remoteEntry.js` precisa liberar CORS. Crie um `vercel.json` na raiz do módulo:
 >
 > ```json
 > {
@@ -362,3 +363,10 @@ Por fim, o sistema estará disponível a todos em [ffe-senai.com.br](https://ffe
 | `0.x.x` → `1.0.0` | Primeira versão estável |
 
 </details>
+
+## Referências:
+#### <a id="vercel" href="https://vercel.com/">Vercel: Agentic Infrastructure</a>
+
+#### <a id="modernjs" href="https://modernjs.dev/">Modern.js - A Progressive React Framework</a>
+
+#### <a id="module-federation" href="https://module-federation.io/">Module Federation - Micro-frontend architectural pattern</a>
