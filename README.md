@@ -123,7 +123,7 @@ export default createBridgeComponent({ rootComponent: App });
 **4. Aponte a variável do grupo** para a URL completa do `remoteEntry.js`:
 
 - **Local:** em `app-shell/.env`, por exemplo `G2_ENTRY="http://localhost:5001/remoteEntry.js"`.
-- **Teste e Desenvolvimento:** em **Settings → Secrets and variables → Actions → Variables**, crie `G2_ENTRY`.
+- **Teste e Desenvolvimento:** em [**Settings → Secrets and variables → Actions → Variables**](https://github.com/ffe-senai/estacao-smart/settings/variables/actions), crie `G2_ENTRY`.
 - **Produção:** automático, a partir do subdomínio do grupo (`https://g2.ffe-senai.com.br/remoteEntry.js`).
 
 > ⚠️ **Somente para Desenvolvimento**<br>
