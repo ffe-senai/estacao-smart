@@ -1,6 +1,6 @@
 name: group-modules_ci
 
-# Checks each group module (git submodule in a root folder): one job per existing module,
+# Checks each group module (git submodule in a root folder; packages/ is skipped): one job per existing module,
 # absent modules don't show up. Each job uploads a "module-<folder>" artifact with its report line.
 # Contract per module: package.json and a lockfile (npm, pnpm, yarn or bun) at the root,
 # the scripts check and build, and a build that generates dist/remoteEntry.js.
@@ -26,7 +26,8 @@ jobs:
       - name: List modules
         id: list
         run: |
-          paths=$(git config -f .gitmodules --get-regexp '\.path$' 2>/dev/null | awk '{print $2}' || true)
+          # Group modules are the submodules at the repo root (packages/ holds shared packages, not modules)
+          paths=$(git config -f .gitmodules --get-regexp '\.path$' 2>/dev/null | awk '$2 !~ /\// {print $2}' || true)
           echo "found=$(printf '%s\n' $paths | jq -Rsc 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
           echo "Modules: ${paths:-none}"
 

@@ -25,9 +25,13 @@ const loaded = new Set<string>();
 const ROOT_RELATIVE = /(^|,\s*)\/(?!\/)/g;
 const URL_ATTRIBUTES = ["src", "srcset", "poster"];
 
+/** Classe do elemento onde o bridge monta o módulo: faz o papel do #root do módulo dentro da janela. */
+export const MODULE_ROOT_CLASS = "smart-module-root";
+
 const toShadowCss = (css: string, base: URL) =>
     css
         .replace(/(^|[\s,{}>~+])(:root|html|body)(?=[\s,{.:[>~+])/g, "$1:host")
+        .replace(/(^|[\s,{}>~+])#root(?![\w-])/g, `$1.${MODULE_ROOT_CLASS}`)
         .replace(/url\((['"]?)([^'")]+)\1\)/g, (match, quote, path) =>
             /^(data:|blob:|https?:|\/\/|#)/.test(path) ? match : `url(${quote}${new URL(path, base).href}${quote})`,
         );
@@ -220,7 +224,7 @@ export const ShadowContainer = ({ origin, children }: { origin?: string; childre
     );
 
     return (
-        <div ref={ref} className="w-full h-full">
+        <div ref={ref} className="flex w-full min-h-full flex-col">
             {host && <LightDom.Provider value={host}>{createPortal(children, host.shadowRoot!)}</LightDom.Provider>}
         </div>
     );
