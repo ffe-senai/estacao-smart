@@ -24,6 +24,7 @@
 | `cobot-ur/` | Submódulo Git do módulo Cobot UR ([integração](#próximos-passos---integrar-módulo)) | G3 |
 | `rastreabilidade/` | Submódulo Git do módulo Rastreabilidade ([integração](#próximos-passos---integrar-módulo)) | G4 |
 | `expedicao/` | Submódulo Git do módulo Expedição ([integração](#próximos-passos---integrar-módulo)) | G5 |
+| `packages/smart40/` | Submódulo Git do pacote [`@ffe-senai/smart40`](#smart40): contrato de eventos, bus e dev-tools | Time DevOps |
 | `.github/` | Workflows de CI/CD e regras do repositório | Time DevOps |
 
 Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `dist/` e `.env*` já são ignorados pelo `.gitignore` e **nunca** devem ser enviados.
@@ -94,7 +95,7 @@ export default defineConfig({
   plugins: [
     react(),
     federation({
-      name: "smart",
+      name: "smart40",
       filename: "remoteEntry.js",
       exposes: { ".": "./src/ModuleBridge.tsx" },
       dts: false,
@@ -113,7 +114,7 @@ export default createBridgeComponent({ rootComponent: App });
 
 | Regra | Por quê |
 |---|---|
-| `name: "smart"` | Nome que o App Shell procura em todos os módulos |
+| `name: "smart40"` | Nome que o App Shell procura em todos os módulos |
 | `exposes` com `"."` | O App Shell carrega o expose padrão do remote |
 | `bridge-react/v19` | O App Shell usa React 19 |
 | Sem `shared` | Cada módulo roda com o próprio React, isolado pelo bridge |
@@ -147,6 +148,9 @@ export default createBridgeComponent({ rootComponent: App });
 
 > 💡 **Dica**<br>
 > O [POC (Proof of Concept)](https://github.com/ffe-senai/poc) é um exemplo de módulo integrado ao App Shell.
+
+> 💡 **Comunicação entre módulos**<br>
+> Os módulos trocam eventos pelo pacote [`@ffe-senai/smart40`](#smart40) (`npm i @ffe-senai/smart40`): contrato de eventos, bus `on`/`emit` e o dev-tools `<smart40-devtools>` para simular cenários. Veja o [README do pacote](https://github.com/ffe-senai/smart40#readme).
 
 ## Fluxo de Trabalho
 
@@ -374,3 +378,5 @@ Por fim, o sistema estará disponível a todos em [ffe-senai.com.br](https://ffe
 #### <a id="modernjs" href="https://modernjs.dev/">Modern.js - A Progressive React Framework</a>
 
 #### <a id="module-federation" href="https://module-federation.io/">Module Federation - Micro-frontend architectural pattern</a>
+
+#### <a id="smart40" href="https://github.com/ffe-senai/smart40">@ffe-senai/smart40 - Contrato de eventos, bus e dev-tools da Estação SMART 4.0</a>

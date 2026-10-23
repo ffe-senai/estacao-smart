@@ -1,3 +1,6 @@
 [submodule "poc"]
 	path = poc
 	url = https://github.com/ffe-senai/poc.git
+[submodule "packages/smart40"]
+	path = packages/smart40
+	url = https://github.com/ffe-senai/smart40.git

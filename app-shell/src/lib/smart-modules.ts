@@ -2,7 +2,7 @@
 
 import * as mf from "@module-federation/enhanced/runtime";
 
-export const MODULE_NAME = "smart";
+export const MODULE_NAME = "smart40";
 
 export const createInstance = (name: string, entry: string) =>
     mf.createInstance({
