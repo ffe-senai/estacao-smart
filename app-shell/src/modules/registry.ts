@@ -1,10 +1,11 @@
 import type { ComponentType } from "react";
-import { Bot, MonitorCog, ScanQrCode, Truck, type LucideIcon } from "lucide-react";
+import { Bot, MonitorCog, ScanQrCode, Truck, Wrench, type LucideIcon } from "lucide-react";
 import POC from "@/modules/poc";
 import { IhmSiemens } from "@/modules/ihm-siemens";
 import { CobotUr } from "@/modules/cobot-ur";
 import { RastreabilidadeQrCode } from "@/modules/rastreabilidade-qrcode";
 import { Expedicao } from "@/modules/expedicao";
+import DevTools from "@/modules/dev-tools";
 
 export type SmartModule = {
     /** Id da janela no layout salvo. Mesmo nome da pasta do módulo no CI. */
@@ -23,7 +24,7 @@ export type SmartModule = {
     component?: ComponentType;
 };
 
-/** Os quatro módulos da estação. Cada um abre na sua própria janela. */
+/** Os módulos da estação e o dev-tools do bus SMART 4.0. Cada um abre na sua própria janela. */
 export const SMART_MODULES: readonly SmartModule[] = [
     {
         id: "poc",
@@ -69,6 +70,15 @@ export const SMART_MODULES: readonly SmartModule[] = [
         icon: Truck,
         accent: "var(--smart-accent-expedicao)",
         component: Expedicao
+    },
+    {
+        id: "dev-tools",
+        group: "DEV",
+        title: "Dev Tools",
+        description: "Eventos SMART 4.0: disparar, log e cenários",
+        icon: Wrench,
+        accent: "var(--smart-text-secondary)",
+        component: DevTools,
     }
 ];
 
