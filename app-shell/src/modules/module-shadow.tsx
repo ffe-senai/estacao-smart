@@ -224,7 +224,7 @@ export const ShadowContainer = ({ origin, children }: { origin?: string; childre
     );
 
     return (
-        <div ref={ref} className="w-full min-h-full">
+        <div ref={ref} className="flex w-full min-h-full flex-col">
             {host && <LightDom.Provider value={host}>{createPortal(children, host.shadowRoot!)}</LightDom.Provider>}
         </div>
     );
