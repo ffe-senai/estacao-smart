@@ -5,7 +5,7 @@ import type { ModuleFederation } from "@module-federation/enhanced/runtime";
 import { Loader2 } from "lucide-react";
 import { WindowState } from "@/components/workspace/window-state";
 import { MODULE_NAME } from "@/lib/smart-modules";
-import { InLightDom, registerModule, ShadowContainer } from "./module-shadow";
+import { InLightDom, MODULE_ROOT_CLASS, registerModule, ShadowContainer } from "./module-shadow";
 
 /** Repassa a falha para o error boundary da janela, que mostra o erro padrão do workspace. */
 const RethrowError = ({ error }: { error: unknown }): never => {
@@ -34,7 +34,7 @@ export const Module = (mf: ModuleFederation, id: string = MODULE_NAME) => {
 
     return (props: React.ComponentProps<typeof RemoteBridge>) => (
         <ShadowContainer origin={origin}>
-            <RemoteBridge {...props} />
+            <RemoteBridge {...props} className={MODULE_ROOT_CLASS} />
         </ShadowContainer>
     );
 };
