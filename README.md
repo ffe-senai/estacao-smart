@@ -7,7 +7,7 @@
   Estação SMART 4.0 - Framework Front-End
   <br>
 <sup>
-  ADS • SENAI | Turma B 2º Sem.
+  © ADS • SENAI | Turma B 2º Sem. 2026
 </sup>
 </h1>
 
@@ -43,10 +43,10 @@ Suba apenas código e arquivos do projeto. Arquivos como `node_modules/`, `dist/
 git clone --recurse-submodules https://github.com/ffe-senai/estacao-smart.git
 
 ```
-Para instalar o app-shel e rodar a aplicação, siga o [README do app-shell](app-shell/README.md).
+Para instalar o app-shell e rodar a aplicação, siga o [README do app-shell](app-shell/README.md).
 
 > ⚠️ **Atenção!**<br>
-> **Nunca** trabalhe direto na **`dev`**. Crie uma branch para cada tarefa:
+> **Nunca** trabalhe direto na **`dev`** ou **`prod`**. Crie uma branch para cada tarefa:
 
 | Tipo | Quando usar |
 |---|---|
@@ -174,7 +174,7 @@ No primeiro `git push`, o navegador abre para você entrar no GitHub.
 <summary><b>2. Crie sua branch</b></summary>
 
 > ⚠️ **Atenção!**<br>
-> **Nunca** trabalhe direto na **`dev`**. Crie uma branch para cada tarefa:
+> **Nunca** trabalhe direto na **`dev`** ou **`prod`**. Crie uma branch para cada tarefa:
 
 ```bash
 # Vá para a branch dev
@@ -334,6 +334,13 @@ Aguarde o *pipeline* `.github/workflows/deploy.yaml` finalizar em **Actions**.
 
 Após concluído, o `deploy` estará disponível em [dev.ffe-senai.com.br](https://dev.ffe-senai.com.br).
 
+| Versão | Quando |
+|---|---|
+| `0.2.0-beta.1` → `0.2.1-beta.1` | Correções |
+| `0.2.1-beta.1` → `0.3.0-beta.1` | Funcionalidades novas |
+| `0.3.0-beta.1` → `0.3.0-beta.2` | Ajustes da mesma entrega |
+| `0.x.x-beta.x` → `1.0.0-beta.1` | Primeira versão estável |
+
 > 💡 **Dica**<br>
 > Você pode acompanhar o procedimento do `CI/CD` em **Actions**.
 
@@ -369,6 +376,9 @@ Por fim, o sistema estará disponível a todos em [ffe-senai.com.br](https://ffe
 | `0.2.0` → `0.2.1` | Correções |
 | `0.2.1` → `0.3.0` | Funcionalidades novas |
 | `0.x.x` → `1.0.0` | Primeira versão estável |
+
+> 💡 **Dica**<br>
+> Você pode acompanhar o procedimento do `CI/CD` em **Actions**.
 
 </details>
 
